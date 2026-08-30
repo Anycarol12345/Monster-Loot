@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNDERVENDA - Loja do Underground</title>
+    <title>Monster Loot - Loja do Underground</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
@@ -14,36 +14,55 @@
     <header class="ut-header">
         <div class="header-inner">
             <h1 class="logo" onclick="showSection('shop')">
-                <span class="logo-under">UNDER</span><span class="logo-venda">VENDA</span>
+                <span class="logo-monster">MONSTER</span><span class="logo-loot">LOOT</span>
             </h1>
+
             <nav class="header-nav">
                 <button class="nav-btn active" data-section="shop" onclick="showSection('shop')">LOJA</button>
                 <button class="nav-btn" data-section="about" onclick="showSection('about')">SOBRE</button>
             </nav>
-            <button class="cart-btn" id="cart-toggle" onclick="toggleCart()">
-                <span class="cart-icon">♥</span>
-                <span class="cart-label">CARRINHO</span>
-                <span class="cart-count" id="cart-count">0</span>
-            </button>
+
+            <div class="header-right">
+                <!-- Music control -->
+                <div class="music-control" id="music-control">
+                    <button class="music-btn" id="music-btn" onclick="toggleMusic()" title="Ligar/desligar música">
+                        <span id="music-icon">♪</span>
+                    </button>
+                    <input type="range" class="volume-slider" id="volume-slider"
+                           min="0" max="100" value="40"
+                           oninput="setVolume(this.value)"
+                           title="Volume">
+                </div>
+
+                <button class="cart-btn" id="cart-toggle" onclick="toggleCart()">
+                    <span class="cart-icon">♥</span>
+                    <span class="cart-label">CARRINHO</span>
+                    <span class="cart-count" id="cart-count">0</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- ========== HERO BANNER ========== -->
+    <!-- ========== HERO / LOGO ========== -->
     <section class="hero" id="hero">
-        <div class="hero-text">
-            <p class="hero-dialogue">* Bem-vindo à UNDERVENDA.</p>
-            <p class="hero-dialogue delay-1">* A melhor loja do Underground.</p>
-            <p class="hero-dialogue delay-2">* Mas cuidado... cada compra tem um preço.</p>
-        </div>
+        <img src="assets/img/logo.png" alt="Monster Loot" class="hero-logo">
     </section>
 
-    <!-- ========== PRODUCT CATALOG ========== -->
+    <!-- ========== HOME: PRODUCT CATALOG ========== -->
     <main class="shop-section" id="section-shop">
         <h2 class="section-title">✦ CATÁLOGO ✦</h2>
         <div class="product-grid" id="product-grid">
             <!-- Products rendered by JS -->
         </div>
     </main>
+
+    <!-- ========== PRODUCT DETAIL ========== -->
+    <section class="product-detail hidden" id="section-product">
+        <button class="back-btn" onclick="showSection('shop')">← VOLTAR AO CATÁLOGO</button>
+        <div class="detail-layout" id="detail-layout">
+            <!-- Rendered by JS -->
+        </div>
+    </section>
 
     <!-- ========== ABOUT SECTION ========== -->
     <section class="about-section hidden" id="section-about">
@@ -58,6 +77,7 @@
             <p class="controls-info">  [↑][↓][←][→] Mover o coração durante ataques</p>
             <br>
             <p class="credits">* Sprites: UNDERTALE by Toby Fox</p>
+            <p class="credits">* Música: Shop (Undertale OST) - Toby Fox</p>
             <p class="credits">* Projeto: Trabalho de Faculdade - 2026</p>
         </div>
     </section>
@@ -95,9 +115,14 @@
 
     <!-- ========== FOOTER ========== -->
     <footer class="ut-footer">
-        <p>UNDERVENDA &copy; 2026 - Projeto Acadêmico</p>
-        <p class="footer-sub">* UNDERTALE &copy; Toby Fox. Todos os sprites pertencem ao autor original.</p>
+        <p>MONSTER LOOT &copy; 2026 - Projeto Acadêmico</p>
+        <p class="footer-sub">* UNDERTALE &copy; Toby Fox. Todos os sprites e músicas pertencem ao autor original.</p>
     </footer>
+
+    <!-- ========== BACKGROUND MUSIC ========== -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="assets/audio/shop-theme.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="js/shop.js"></script>
     <script src="js/battle.js"></script>
