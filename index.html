@@ -23,15 +23,33 @@
             </nav>
 
             <div class="header-right">
-                <!-- Music control -->
+                <!-- Currency selector -->
+                <div class="currency-control">
+                    <label class="visually-hidden" for="currency-select">Moeda do mercado</label>
+                    <select class="currency-select" id="currency-select"
+                            onchange="setCurrency(this.value)"
+                            title="Moeda do mercado">
+                        <!-- Options rendered by JS -->
+                    </select>
+                </div>
+
+                <!-- Music control (colapsável) -->
                 <div class="music-control" id="music-control">
-                    <button class="music-btn" id="music-btn" onclick="toggleMusic()" title="Ligar/desligar música">
+                    <button class="music-toggle" id="music-toggle"
+                            onclick="toggleMusicPanel()"
+                            aria-expanded="false" aria-controls="music-panel"
+                            title="Mostrar controles de música">
                         <span id="music-icon">♪</span>
                     </button>
-                    <input type="range" class="volume-slider" id="volume-slider"
-                           min="0" max="100" value="40"
-                           oninput="setVolume(this.value)"
-                           title="Volume">
+                    <div class="music-panel" id="music-panel">
+                        <button class="music-btn" id="music-btn" onclick="toggleMusic()" title="Ligar/desligar música">
+                            <span id="music-state">❚❚</span>
+                        </button>
+                        <input type="range" class="volume-slider" id="volume-slider"
+                               min="0" max="100" value="40"
+                               oninput="setVolume(this.value)"
+                               title="Volume">
+                    </div>
                 </div>
 
                 <button class="cart-btn" id="cart-toggle" onclick="toggleCart()">
@@ -69,8 +87,8 @@
         <div class="about-box">
             <h2 class="section-title">✦ SOBRE ✦</h2>
             <p>* Este é um projeto acadêmico inspirado no jogo UNDERTALE.</p>
-            <p>* Ao finalizar uma compra, você enfrentará um combate no estilo do jogo.</p>
-            <p>* Sobreviva para concluir sua compra!</p>
+            <p>* Cada produto é protegido por um monstro. Ao adicionar um item ao carrinho, o combate começa na hora.</p>
+            <p>* Vença (ou poupe o monstro) para guardar o item. Se você perder, o carrinho inteiro é perdido!</p>
             <br>
             <p>* Controles da batalha:</p>
             <p class="controls-info">  [←][→] Navegar menu &nbsp; [Z] Confirmar &nbsp; [X] Voltar</p>
@@ -94,7 +112,7 @@
         <div class="cart-footer" id="cart-footer">
             <div class="cart-total">
                 <span>TOTAL:</span>
-                <span id="cart-total-value">G 0</span>
+                <span id="cart-total-value">0</span>
             </div>
             <button class="checkout-btn" id="checkout-btn" onclick="checkout()" disabled>
                 ♥ FINALIZAR COMPRA ♥

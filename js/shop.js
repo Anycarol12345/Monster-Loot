@@ -153,12 +153,107 @@ let cart = [];
 let toastTimeout = null;
 let currentProduct = null;
 let detailQty = 1;
+let pendingPurchase = null;
 
 function init() {
     loadCart();
+    initCurrency();
     renderProducts();
     updateCartUI();
     initAudio();
+}
+
+// ========== CURRENCY ==========
+// Os preços dos produtos são armazenados em G (gold do Underground).
+// As taxas abaixo são fixas e convertem G → moeda escolhida; nenhuma
+// API externa é consultada.
+
+const CURRENCIES = {
+    BRL: { label: 'R$ BRL', locale: 'pt-BR', rate: 0.10 },
+    USD: { label: '$ USD',  locale: 'en-US', rate: 0.02 },
+    EUR: { label: '€ EUR',  locale: 'de-DE', rate: 0.018 },
+    // Easter egg: última moeda da lista, a original do jogo.
+    G:   { label: '♥ G',    locale: null,    rate: 1, easterEgg: true },
+};
+
+const DEFAULT_CURRENCY = 'USD';
+
+let currency = DEFAULT_CURRENCY;
+
+// Detecta a moeda regional pelo fuso horário e, como reserva, pelo idioma.
+function detectCurrency() {
+    try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        if (/^America\/(Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Manaus|Cuiaba|Campo_Grande|Boa_Vista|Porto_Velho|Rio_Branco|Maceio|Araguaina|Santarem|Noronha)$/.test(tz)) return 'BRL';
+        if (tz.startsWith('Europe/')) return 'EUR';
+        if (tz.startsWith('America/')) return 'USD';
+    } catch (e) { /* Intl indisponível */ }
+
+    const lang = (navigator.language || '').toLowerCase();
+    if (lang.startsWith('pt')) return 'BRL';
+    if (lang.startsWith('en')) return 'USD';
+    if (lang) return 'EUR';
+
+    return DEFAULT_CURRENCY;
+}
+
+function initCurrency() {
+    let saved = null;
+    try {
+        saved = localStorage.getItem('monsterloot-currency');
+    } catch (e) { /* localStorage indisponível */ }
+
+    currency = (saved && CURRENCIES[saved]) ? saved : detectCurrency();
+
+    const select = document.getElementById('currency-select');
+    if (select) {
+        select.innerHTML = Object.keys(CURRENCIES).map(code =>
+            `<option value="${code}">${CURRENCIES[code].label}</option>`
+        ).join('');
+        select.value = currency;
+    }
+    applyGoldMode();
+}
+
+function setCurrency(code) {
+    if (!CURRENCIES[code]) return;
+
+    currency = code;
+    try {
+        localStorage.setItem('monsterloot-currency', code);
+    } catch (e) { /* ignore */ }
+
+    applyGoldMode();
+    renderProducts();
+    if (currentProduct) renderProductDetail();
+    updateCartUI();
+
+    if (CURRENCIES[code].easterEgg) triggerGoldEasterEgg();
+    else showToast(`* Moeda do mercado alterada para ${code}.`);
+}
+
+function formatPrice(priceInG) {
+    const c = CURRENCIES[currency] || CURRENCIES[DEFAULT_CURRENCY];
+    if (!c.locale) return `G ${Math.round(priceInG * c.rate)}`;
+
+    return new Intl.NumberFormat(c.locale, {
+        style: 'currency',
+        currency: currency,
+    }).format(priceInG * c.rate);
+}
+
+function applyGoldMode() {
+    const select = document.getElementById('currency-select');
+    if (select) select.classList.toggle('gold-mode', currency === 'G');
+}
+
+function triggerGoldEasterEgg() {
+    const flash = document.createElement('div');
+    flash.className = 'gold-flash';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 1000);
+
+    showToast('* Você sente sua DETERMINAÇÃO aumentar.');
 }
 
 // ========== PRODUCTS ==========
@@ -183,7 +278,7 @@ function renderProducts() {
                 <h3 class="product-name">${product.name}</h3>
                 <p class="product-desc">${product.desc}</p>
                 <div class="product-footer">
-                    <span class="product-price">${product.price}</span>
+                    <span class="product-price">${formatPrice(product.price)}</span>
                     <button class="add-to-cart-btn"
                             id="btn-${product.id}"
                             onclick="event.stopPropagation(); addToCart('${product.id}')">
@@ -243,7 +338,7 @@ function renderProductDetail() {
 
         <div class="detail-info">
             <h2 class="detail-name">${p.name}</h2>
-            <div class="detail-price"><small>G</small> ${p.price}</div>
+            <div class="detail-price">${formatPrice(p.price)}</div>
             <div class="detail-desc">${descLines}</div>
 
             <div class="detail-specs">
@@ -254,7 +349,8 @@ function renderProductDetail() {
             <div class="detail-warning">
                 <strong>⚠ AVISO:</strong> Este item é protegido por
                 <strong>${p.boss.toUpperCase()}</strong>.
-                Ao finalizar a compra, você poderá ser desafiado para um combate.
+                O combate começa assim que você adicionar ao carrinho — se perder,
+                todo o carrinho é perdido.
             </div>
 
             <div class="detail-actions">
@@ -287,39 +383,39 @@ function changeDetailQty(delta) {
 
 function addDetailToCart() {
     if (!currentProduct) return;
-    for (let i = 0; i < detailQty; i++) addToCart(currentProduct.id, true);
-    showToast(`* ${detailQty}x ${currentProduct.name} adicionado ao carrinho!`);
+    addToCart(currentProduct.id, detailQty);
 }
 
 // ========== CART ==========
 
-function addToCart(productId, silent) {
+// Adicionar ao carrinho NÃO guarda o item de imediato: o monstro que
+// protege o produto ataca na hora. O item só entra no carrinho se o
+// jogador vencer (ou poupar) — ver onBattleWin/onBattleLose.
+function addToCart(productId, qty) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
+    if (pendingPurchase) return;
 
-    const existing = cart.find(item => item.id === productId);
+    startProductBattle(product, Math.max(1, qty || 1));
+}
+
+function commitPendingToCart(pending) {
+    const existing = cart.find(item => item.id === pending.id);
     if (existing) {
-        existing.qty++;
+        existing.qty += pending.qty;
     } else {
-        cart.push({ id: productId, qty: 1 });
+        cart.push({ id: pending.id, qty: pending.qty });
     }
 
     saveCart();
     updateCartUI();
+}
 
-    if (silent) return;
-
+function resetAddButton(productId) {
     const btn = document.getElementById(`btn-${productId}`);
-    if (btn) {
-        btn.classList.add('added');
-        btn.textContent = '♥ ADICIONADO';
-        setTimeout(() => {
-            btn.classList.remove('added');
-            btn.textContent = '+ CARRINHO';
-        }, 800);
-    }
-
-    showToast(`* ${product.name} adicionado ao carrinho!`);
+    if (!btn) return;
+    btn.classList.remove('added');
+    btn.textContent = '+ CARRINHO';
 }
 
 function removeFromCart(productId) {
@@ -331,6 +427,13 @@ function removeFromCart(productId) {
 function updateQty(productId, delta) {
     const item = cart.find(i => i.id === productId);
     if (!item) return;
+
+    // Cada unidade a mais é uma nova adição — e portanto um novo combate.
+    if (delta > 0) {
+        if (document.getElementById('cart-sidebar').classList.contains('open')) toggleCart();
+        addToCart(productId, delta);
+        return;
+    }
 
     item.qty += delta;
     if (item.qty <= 0) {
@@ -382,7 +485,7 @@ function updateCartUI() {
                 </div>
                 <div class="cart-item-info">
                     <div class="cart-item-name">${product.name}</div>
-                    <div class="cart-item-price">G ${product.price * item.qty}</div>
+                    <div class="cart-item-price">${formatPrice(product.price * item.qty)}</div>
                 </div>
                 <div class="cart-item-controls">
                     <button class="cart-qty-btn" onclick="updateQty('${item.id}', -1)">-</button>
@@ -396,7 +499,7 @@ function updateCartUI() {
         checkoutBtn.disabled = false;
     }
 
-    totalEl.textContent = `G ${getCartTotal()}`;
+    totalEl.textContent = formatPrice(getCartTotal());
 }
 
 // ========== PERSISTENCE ==========
@@ -483,14 +586,29 @@ function setVolume(value) {
     updateMusicIcon();
 }
 
+// O ícone ♪ apenas colapsa/expande o painel; o play/pause fica dentro dele.
+function toggleMusicPanel() {
+    const control = document.getElementById('music-control');
+    const toggle = document.getElementById('music-toggle');
+    if (!control || !toggle) return;
+
+    const expanded = control.classList.toggle('expanded');
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.title = expanded
+        ? 'Ocultar controles de música'
+        : 'Mostrar controles de música';
+}
+
 function updateMusicIcon() {
+    const toggle = document.getElementById('music-toggle');
     const btn = document.getElementById('music-btn');
-    const icon = document.getElementById('music-icon');
-    if (!btn || !icon || !audioEl) return;
+    const state = document.getElementById('music-state');
+    if (!audioEl) return;
 
     const silent = audioEl.paused || audioEl.volume === 0;
-    icon.textContent = silent ? '▶' : '♪';
-    btn.classList.toggle('muted', silent);
+    if (state) state.textContent = audioEl.paused ? '▶' : '❚❚';
+    if (toggle) toggle.classList.toggle('muted', silent);
+    if (btn) btn.classList.toggle('muted', silent);
 }
 
 // ========== NAVIGATION ==========
@@ -516,18 +634,21 @@ function toggleCart() {
     document.body.style.overflow = isOpen ? '' : 'hidden';
 }
 
-// ========== CHECKOUT → BATTLE ==========
+// ========== ADD TO CART → BATTLE ==========
 
-function checkout() {
-    toggleCart();
+function startProductBattle(product, qty) {
+    pendingPurchase = { id: product.id, qty: qty };
 
-    const items = getCartItems();
-    if (items.length === 0) return;
+    const btn = document.getElementById(`btn-${product.id}`);
+    if (btn) {
+        btn.classList.add('added');
+        btn.textContent = '! COMBATE !';
+    }
 
-    const bosses = [...new Set(items.map(i => i.boss))];
-    const bossKey = bosses[Math.floor(Math.random() * bosses.length)];
+    showToast(`* ${product.boss.toUpperCase()} bloqueia o caminho!`);
 
-    const cartForBattle = items.map(i => ({
+    // Itens já conquistados viram consumíveis de cura durante a luta.
+    const cartForBattle = getCartItems().map(i => ({
         name: i.name,
         price: i.price,
         qty: i.qty
@@ -544,12 +665,12 @@ function checkout() {
         }
 
         if (typeof window.startBattle === 'function') {
-            window.startBattle(bossKey, cartForBattle, onBattleWin, onBattleLose);
+            window.startBattle(product.boss, cartForBattle, onBattleWin, onBattleLose);
         } else {
             console.error('Battle system not loaded');
             overlay.classList.remove('active');
             resumeMusic();
-            showResult(true);
+            onBattleWin();
         }
     }, 400);
 }
@@ -563,45 +684,60 @@ function resumeMusic() {
     }
 }
 
+// Vitória (ou MERCY): o item finalmente entra no carrinho.
 function onBattleWin() {
     document.getElementById('battle-overlay').classList.remove('active');
     resumeMusic();
-    showResult(true);
+
+    const pending = pendingPurchase;
+    pendingPurchase = null;
+    if (!pending) return;
+
+    resetAddButton(pending.id);
+    commitPendingToCart(pending);
+    showBattleResult(true, pending);
 }
 
+// Derrota: o carrinho inteiro é perdido, não só o item em disputa.
 function onBattleLose() {
     document.getElementById('battle-overlay').classList.remove('active');
     resumeMusic();
-    showResult(false);
+
+    const pending = pendingPurchase;
+    pendingPurchase = null;
+    if (pending) resetAddButton(pending.id);
+
+    cart = [];
+    saveCart();
+    updateCartUI();
+    showBattleResult(false, pending);
 }
 
-function showResult(success) {
+function showBattleResult(success, pending) {
     const screen = document.getElementById('result-screen');
     const content = document.getElementById('result-content');
+    const product = pending ? PRODUCTS.find(p => p.id === pending.id) : null;
+    if (!product) return;
 
     if (success) {
-        const total = getCartTotal();
         content.innerHTML = `
             <div class="result-success">
-                <h2>♥ COMPRA FINALIZADA ♥</h2>
-                <p>* Você venceu a batalha!</p>
-                <p>* Seus itens serão enviados para o Underground.</p>
-                <p style="color: #ffff00; margin-top: 16px;">Total: G ${total}</p>
+                <h2>♥ ITEM CONQUISTADO ♥</h2>
+                <p>* Você derrotou ${product.boss.toUpperCase()}!</p>
+                <p>* ${pending.qty}x ${product.name} entrou no carrinho.</p>
+                <p style="color: #ffff00; margin-top: 16px;">Carrinho: ${formatPrice(getCartTotal())}</p>
                 <br>
-                <button class="result-btn primary" onclick="finishPurchase()">CONTINUAR</button>
+                <button class="result-btn primary" onclick="closeResult()">CONTINUAR</button>
             </div>
         `;
-        cart = [];
-        saveCart();
-        updateCartUI();
     } else {
         content.innerHTML = `
             <div class="result-fail">
                 <h2 style="color: #ff0000;">GAME OVER</h2>
-                <p>* Você não sobreviveu à batalha...</p>
-                <p>* Mas não desista! Tente novamente.</p>
+                <p>* ${product.boss.toUpperCase()} te derrotou...</p>
+                <p>* Todo o conteúdo do carrinho ficou para trás no Underground.</p>
                 <br>
-                <button class="result-btn" onclick="retryPurchase()">TENTAR NOVAMENTE</button>
+                <button class="result-btn" onclick="retryBattle('${product.id}', ${pending.qty})">TENTAR NOVAMENTE</button>
                 <button class="result-btn" onclick="closeResult()">VOLTAR À LOJA</button>
             </div>
         `;
@@ -610,14 +746,40 @@ function showResult(success) {
     screen.classList.add('active');
 }
 
+function retryBattle(productId, qty) {
+    closeResult();
+    addToCart(productId, qty);
+}
+
+// ========== CHECKOUT ==========
+// Os combates já aconteceram item a item, então aqui só fechamos o pedido.
+
+function checkout() {
+    if (cart.length === 0) return;
+
+    toggleCart();
+    const total = getCartTotal();
+
+    cart = [];
+    saveCart();
+    updateCartUI();
+
+    document.getElementById('result-content').innerHTML = `
+        <div class="result-success">
+            <h2>♥ COMPRA FINALIZADA ♥</h2>
+            <p>* Você sobreviveu a todos os monstros.</p>
+            <p>* Seus itens serão enviados para o Underground.</p>
+            <p style="color: #ffff00; margin-top: 16px;">Total: ${formatPrice(total)}</p>
+            <br>
+            <button class="result-btn primary" onclick="finishPurchase()">CONTINUAR</button>
+        </div>
+    `;
+    document.getElementById('result-screen').classList.add('active');
+}
+
 function finishPurchase() {
     closeResult();
     showToast('* Obrigado pela compra! ♥');
-}
-
-function retryPurchase() {
-    closeResult();
-    checkout();
 }
 
 function closeResult() {

@@ -32,12 +32,24 @@
       bone_v:      'assets/sprites/attacks/bone_v.png',
       bone_top:    'assets/sprites/attacks/bone_top.png',
       bone_bottom: 'assets/sprites/attacks/bone_bottom.png',
+      bone_loop:   'assets/sprites/attacks/bone_loop.png',
       fire_0:      'assets/sprites/attacks/fire_0.png',
       fire_1:      'assets/sprites/attacks/fire_1.png',
+      flame_0:     'assets/sprites/attacks/flame_0.png',
+      flame_1:     'assets/sprites/attacks/flame_1.png',
       spear:       'assets/sprites/attacks/spear.png',
+      spear_white: 'assets/sprites/attacks/spear_white.png',
       teardrop:    'assets/sprites/attacks/teardrop.png',
       bullet_0:    'assets/sprites/attacks/bullet_0.png',
       bullet_1:    'assets/sprites/attacks/bullet_1.png',
+      fly_0:       'assets/sprites/attacks/fly_0.png',
+      fly_1:       'assets/sprites/attacks/fly_1.png',
+      frog_bullet: 'assets/sprites/attacks/frog_bullet.png',
+      smallfrog_0: 'assets/sprites/attacks/spr_smallfrogbullet_0.png',
+      smallfrog_1: 'assets/sprites/attacks/spr_smallfrogbullet_1.png',
+      bomb_0:      'assets/sprites/attacks/spr_bulletgenmd_0.png',
+      bomb_1:      'assets/sprites/attacks/spr_bulletgenmd_1.png',
+      bomb_2:      'assets/sprites/attacks/spr_bulletgenmd_2.png',
     },
     gaster: [
       'assets/sprites/attacks/gaster_0.png',
@@ -60,7 +72,7 @@
       name: 'Froggit',
       hp: 30, maxHp: 30, atk: 4, def: 2,
       spriteKeys: ['froggit'],
-      spriteScale: 4,
+      spriteScale: 2,
       dialogue: [
         '* Froggit te encarou ameaçadoramente.',
         '* (Mas está fazendo o melhor que pode.)',
@@ -73,7 +85,7 @@
       name: 'Napstablook',
       hp: 44, maxHp: 44, atk: 5, def: 2,
       spriteKeys: ['napstablook'],
-      spriteScale: 4,
+      spriteScale: 2.5,
       dialogue: [
         '* Ah... você quer comprar algo?... ok eu acho...',
         '* realmente não to afim agora...',
@@ -112,7 +124,7 @@
       name: 'Undyne',
       hp: 70, maxHp: 70, atk: 10, def: 4,
       spriteKeys: ['undyne'],
-      spriteScale: 1.5,
+      spriteScale: 1,
       dialogue: [
         '* NGAHHH!! Você acha que pode comprar isso assim?!',
         '* PRIMEIRO, PROVE QUE É DIGNO!',
@@ -125,7 +137,7 @@
       name: 'Sans',
       hp: 1, maxHp: 1, atk: 25, def: 1,
       spriteKeys: ['sans'],
-      spriteScale: 3,
+      spriteScale: 2,
       dialogue: [
         '* heh. beleza, vamos lá.',
         '* é um lindo dia lá fora... pássaros cantando, flores desabrochando...',
@@ -151,7 +163,7 @@
       name: 'Mettaton EX',
       hp: 90, maxHp: 90, atk: 9, def: 5,
       spriteKeys: ['mettaton'],
-      spriteScale: 5,
+      spriteScale: 2.8,
       dialogue: [
         '* OH YES! HORA DO SHOW, QUERIDO!',
         '* ESSAS RATINGS VÃO EXPLODIR!',
@@ -169,26 +181,42 @@
     FIGHT_ANIM: 'FIGHT_ANIM',
     ACT_SELECT: 'ACT_SELECT',
     ITEM_SELECT: 'ITEM_SELECT',
+    MESSAGE: 'MESSAGE',
     ENEMY_TURN: 'ENEMY_TURN',
     WIN: 'WIN',
     LOSE: 'LOSE',
   };
 
+  // ── Layout: proporções canônicas do Undertale ─────────────
+  // Área de batalha 640x480, caixa de batalha 565x140.
   const CANVAS_W = 640;
   const CANVAS_H = 480;
 
-  // ── Battle Box geometry ───────────────────────────────────
-  const BOX_W = 575;
+  const BOX_W = 565;
   const BOX_H = 140;
-  const BOX_BORDER = 3;
-  const BOX_X = (CANVAS_W - BOX_W) / 2;
-  const BOX_Y = 255;
+  const BOX_BORDER = 5;
+  const BOX_X = Math.round((CANVAS_W - BOX_W) / 2);
+  const BOX_Y = 250;
 
-  const SOUL_SCALE = 2;
+  // Faixa vertical reservada ao monstro — nunca invade a caixa de batalha.
+  const BOSS_AREA_TOP = 18;
+  const BOSS_AREA_BOTTOM = BOX_Y - 22;
+
+  // Botões FIGHT/ACT/ITEM/MERCY: 110x42 (tamanho nativo dos sprites).
+  const MENU_BTN_W = 110;
+  const MENU_BTN_H = 42;
+  const MENU_GAP = (BOX_W - MENU_BTN_W * 4) / 3;
+  const MENU_Y = BOX_Y + BOX_H + 42;
+  const HUD_Y = BOX_Y + BOX_H + 22;
+
+  const SOUL_SCALE = 1;
   const SOUL_SIZE = 16 * SOUL_SCALE;
-  const SOUL_SPEED = 3;
+  const SOUL_SPEED = 2.2;
   const PLAYER_MAX_HP = 20;
   const INVINCIBILITY_MS = 1000;
+
+  // Velocidade da barra de ataque (% da barra por frame a 60fps).
+  const FIGHT_BAR_SPEED = 1.6;
 
   // ── Preloader ─────────────────────────────────────────────
   function collectAllPaths() {
@@ -231,6 +259,23 @@
     return Promise.all(promises).then(() => cache);
   }
 
+  // ── Quebra de linha compartilhada (caixa de texto e balão) ─
+  function wrapText(ctx, text, maxWidth) {
+    const lines = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+      const test = line + (line ? ' ' : '') + word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
   // ── Soul ──────────────────────────────────────────────────
   class Soul {
     constructor(x, y) {
@@ -243,10 +288,64 @@
       this.displayHp = PLAYER_MAX_HP;
       this.invTimer = 0;
       this.visible = true;
+      this.scale = 1;
+      this.entry = null;
+    }
+
+    // Entrada estilo Undertale: a alma surge pequena, voa até o centro
+    // da caixa e pisca duas vezes antes de assumir o controle.
+    startEntry(fromX, fromY, toX, toY) {
+      this.entry = {
+        fromX, fromY, toX, toY,
+        timer: 0,
+        moveMs: 420,
+        blinkMs: 400,
+      };
+      this.x = fromX;
+      this.y = fromY;
+      this.scale = 0.25;
+      this.visible = true;
+    }
+
+    get entering() { return this.entry !== null; }
+
+    _updateEntry(dt) {
+      const e = this.entry;
+      e.timer += dt;
+
+      if (e.timer <= e.moveMs) {
+        const k = e.timer / e.moveMs;
+        const ease = 1 - Math.pow(1 - k, 3);
+        this.x = e.fromX + (e.toX - e.fromX) * ease;
+        this.y = e.fromY + (e.toY - e.fromY) * ease;
+        this.scale = 0.25 + 0.75 * ease;
+        this.visible = true;
+        return;
+      }
+
+      this.x = e.toX;
+      this.y = e.toY;
+      this.scale = 1;
+
+      // Duas piscadas = 4 alternâncias em blinkMs.
+      const blinkT = e.timer - e.moveMs;
+      if (blinkT < e.blinkMs) {
+        this.visible = Math.floor(blinkT / (e.blinkMs / 4)) % 2 === 0;
+        return;
+      }
+
+      this.visible = true;
+      this.entry = null;
     }
 
     update(keys, box, dt) {
-      const spd = SOUL_SPEED;
+      if (this.entry) {
+        this._updateEntry(dt);
+        this._updateHpDisplay(dt);
+        return;
+      }
+
+      const spd = SOUL_SPEED * (dt / 16.67);
       if (keys['ArrowLeft'])  this.x -= spd;
       if (keys['ArrowRight']) this.x += spd;
       if (keys['ArrowUp'])    this.y -= spd;
@@ -268,6 +367,10 @@
         this.visible = true;
       }
 
+      this._updateHpDisplay(dt);
+    }
+
+    _updateHpDisplay(dt) {
       const hpDiff = this.displayHp - this.hp;
       if (Math.abs(hpDiff) > 0.1)
         this.displayHp -= hpDiff * Math.min(1, dt * 0.005);
@@ -276,7 +379,7 @@
     }
 
     takeDamage(amount) {
-      if (this.invTimer > 0) return false;
+      if (this.invTimer > 0 || this.entry) return false;
       this.hp = Math.max(0, this.hp - amount);
       this.invTimer = INVINCIBILITY_MS;
       return true;
@@ -285,11 +388,13 @@
     render(ctx, sprites) {
       if (!this.visible) return;
       const img = sprites[SPRITE.soul];
-      ctx.drawImage(img, this.x, this.y, this.w, this.h);
+      const w = this.w * this.scale;
+      const h = this.h * this.scale;
+      ctx.drawImage(img, this.x + (this.w - w) / 2, this.y + (this.h - h) / 2, w, h);
     }
 
     getHitbox() {
-      const shrink = 4;
+      const shrink = 3;
       return {
         x: this.x + shrink,
         y: this.y + shrink,
@@ -309,15 +414,50 @@
       this.alive = true;
       this.age = 0;
       this.angle = 0;
+      this.gravity = 0;
+      this.wobble = null;
+      this.frames = null;
+    }
+
+    // Animação por quadros (moscas, chamas, blasters, bombas...).
+    setFrames(frames, msPerFrame) {
+      this.frames = frames;
+      this.frameMs = msPerFrame;
+      this._frameTimer = 0;
+      this._frameIndex = 0;
+      this.spriteKey = frames[0];
+      return this;
+    }
+
+    // Oscilação horizontal senoidal em torno da posição de origem.
+    setWobble(amplitude, frequency) {
+      this.wobble = { amp: amplitude, freq: frequency, baseX: this.x };
+      return this;
     }
 
     update(dt) {
       const t = dt / 16.67;
+      this.vy += this.gravity * t;
       this.x += this.vx * t;
       this.y += this.vy * t;
       this.age += dt;
-      if (this.x < -60 || this.x > CANVAS_W + 60 ||
-          this.y < -60 || this.y > CANVAS_H + 60)
+
+      if (this.wobble) {
+        this.wobble.baseX += this.vx * t;
+        this.x = this.wobble.baseX + Math.sin(this.age * this.wobble.freq) * this.wobble.amp;
+      }
+
+      if (this.frames) {
+        this._frameTimer += dt;
+        if (this._frameTimer >= this.frameMs) {
+          this._frameTimer = 0;
+          this._frameIndex = (this._frameIndex + 1) % this.frames.length;
+          this.spriteKey = this.frames[this._frameIndex];
+        }
+      }
+
+      if (this.x < -80 || this.x > CANVAS_W + 80 ||
+          this.y < -80 || this.y > CANVAS_H + 80)
         this.alive = false;
     }
 
@@ -346,161 +486,420 @@
            a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
-  // ── Attack pattern generators ─────────────────────────────
-  // Each returns an array of projectile configs spawned at a given tick time.
-  function generateAttacks(type, elapsed, box) {
-    const projs = [];
-    const cx = box.x + box.w / 2;
-    const cy = box.y + box.h / 2;
-    const t = elapsed;
+  // ── Attack patterns ───────────────────────────────────────
+  // Cada monstro tem vários padrões; o engine sorteia um por turno e
+  // nunca repete o mesmo duas vezes seguidas (ver _pickAttackPattern).
+  // spawn(t, dt, box) devolve os projéteis criados neste frame.
 
-    switch (type) {
-      case 'froggit': {
-        if (t % 400 < 16) {
-          const startX = cx + (Math.random() - 0.5) * box.w * 0.8;
+  // Dispara uma vez a cada `ms`, independente da variação do dt.
+  function beat(t, dt, ms) {
+    return Math.floor(t / ms) !== Math.floor(Math.max(0, t - dt) / ms);
+  }
+
+  function rand(min, max) { return min + Math.random() * (max - min); }
+
+  const ATTACK_PATTERNS = {
+    froggit: [
+      {
+        id: 'flies',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 420)) return [];
           const p = new Projectile(
-            startX, box.y - 10,
-            Math.sin(t * 0.003) * 1.2, 2.5,
-            24, 24, SPRITE.attacks.bullet_0
+            rand(box.x + 10, box.x + box.w - 30), box.y - 14,
+            0, rand(1.6, 2.4), 24, 24, SPRITE.attacks.fly_0
           );
-          projs.push(p);
-        }
-        break;
-      }
-      case 'napstablook': {
-        if (t % 300 < 16) {
-          const cols = 5;
-          const col = Math.floor(Math.random() * cols);
-          const gap = box.w / cols;
-          const p = new Projectile(
-            box.x + gap * col + gap / 2 - 12, box.y - 10,
-            0, 2.0 + Math.random(),
-            16, 22, SPRITE.attacks.teardrop
-          );
-          projs.push(p);
-        }
-        break;
-      }
-      case 'toriel': {
-        if (t % 500 < 16) {
+          p.setFrames([SPRITE.attacks.fly_0, SPRITE.attacks.fly_1], 120);
+          p.setWobble(18, 0.006);
+          return [p];
+        },
+      },
+      {
+        id: 'hop',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 900)) return [];
           const fromLeft = Math.random() > 0.5;
-          const startX = fromLeft ? box.x - 20 : box.x + box.w + 20;
-          const vx = fromLeft ? 2.5 : -2.5;
-          const sprite = Math.random() > 0.5 ? SPRITE.attacks.fire_0 : SPRITE.attacks.fire_1;
           const p = new Projectile(
-            startX, cy + (Math.random() - 0.5) * box.h * 0.6,
-            vx, Math.sin(t * 0.005) * 1.5,
-            30, 30, sprite
+            fromLeft ? box.x - 20 : box.x + box.w + 20,
+            box.y + box.h - 30,
+            fromLeft ? 2.2 : -2.2, -3.4,
+            30, 30, SPRITE.attacks.frog_bullet
           );
-          projs.push(p);
-        }
-        break;
-      }
-      case 'papyrus': {
-        if (t % 350 < 16) {
-          const fromBottom = Math.random() > 0.5;
-          const startY = fromBottom ? box.y + box.h + 10 : box.y - 20;
-          const vy = fromBottom ? -3.0 : 3.0;
-          const startX = box.x + Math.random() * box.w;
-          const isH = Math.random() > 0.5;
+          p.gravity = 0.13;
+          return [p];
+        },
+      },
+      {
+        id: 'swarm',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 340)) return [];
+          const fromLeft = Math.random() > 0.5;
           const p = new Projectile(
-            startX, startY,
-            0, vy,
-            isH ? 42 : 12, isH ? 12 : 56,
-            isH ? SPRITE.attacks.bone_h : SPRITE.attacks.bone_v
+            fromLeft ? box.x - 24 : box.x + box.w + 24,
+            rand(box.y + 8, box.y + box.h - 28),
+            fromLeft ? 2.6 : -2.6, 0,
+            20, 20, SPRITE.attacks.smallfrog_0
           );
-          projs.push(p);
-        }
-        break;
-      }
-      case 'undyne': {
-        if (t % 250 < 16) {
+          p.setFrames([SPRITE.attacks.smallfrog_0, SPRITE.attacks.smallfrog_1], 150);
+          return [p];
+        },
+      },
+    ],
+
+    napstablook: [
+      {
+        id: 'tears',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 300)) return [];
+          const cols = 5;
+          const gap = box.w / cols;
+          const col = Math.floor(Math.random() * cols);
+          return [new Projectile(
+            box.x + gap * col + gap / 2 - 8, box.y - 14,
+            0, rand(2.0, 3.0), 16, 18, SPRITE.attacks.teardrop
+          )];
+        },
+      },
+      {
+        id: 'tearwall',
+        spawn(t, dt, box) {
+          // Parede de lágrimas com uma única brecha para escapar.
+          if (!beat(t, dt, 1400)) return [];
+          const cols = 7;
+          const gap = box.w / cols;
+          const hole = Math.floor(Math.random() * cols);
+          const projs = [];
+          for (let i = 0; i < cols; i++) {
+            if (i === hole) continue;
+            projs.push(new Projectile(
+              box.x + gap * i + gap / 2 - 8, box.y - 20,
+              0, 2.2, 16, 18, SPRITE.attacks.teardrop
+            ));
+          }
+          return projs;
+        },
+      },
+      {
+        id: 'tearrain',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 220)) return [];
+          const fromLeft = Math.random() > 0.5;
+          return [new Projectile(
+            rand(box.x, box.x + box.w), box.y - 16,
+            fromLeft ? 1.1 : -1.1, 2.4, 16, 18, SPRITE.attacks.teardrop
+          )];
+        },
+      },
+    ],
+
+    toriel: [
+      {
+        id: 'firewave',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 480)) return [];
+          const fromLeft = Math.random() > 0.5;
+          const p = new Projectile(
+            fromLeft ? box.x - 24 : box.x + box.w + 24,
+            rand(box.y + 10, box.y + box.h - 34),
+            fromLeft ? 2.4 : -2.4, 0,
+            24, 24, SPRITE.attacks.fire_0
+          );
+          p.setFrames([SPRITE.attacks.fire_0, SPRITE.attacks.fire_1], 110);
+          return [p];
+        },
+      },
+      {
+        id: 'pillars',
+        spawn(t, dt, box) {
+          // Colunas de chamas subindo do chão da caixa.
+          if (!beat(t, dt, 700)) return [];
+          const projs = [];
+          for (let i = 0; i < 2; i++) {
+            const p = new Projectile(
+              rand(box.x + 10, box.x + box.w - 42), box.y + box.h + 20,
+              0, -2.0, 32, 32, SPRITE.attacks.flame_0
+            );
+            p.setFrames([SPRITE.attacks.flame_0, SPRITE.attacks.flame_1], 130);
+            projs.push(p);
+          }
+          return projs;
+        },
+      },
+      {
+        id: 'firering',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 1100)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const dist = Math.max(box.w, box.h) / 2 + 40;
+          const projs = [];
+          const count = 6;
+          const offset = Math.random() * Math.PI * 2;
+          for (let i = 0; i < count; i++) {
+            const a = offset + (i / count) * Math.PI * 2;
+            const p = new Projectile(
+              cx + Math.cos(a) * dist, cy + Math.sin(a) * dist,
+              -Math.cos(a) * 2.0, -Math.sin(a) * 2.0,
+              24, 24, SPRITE.attacks.fire_0
+            );
+            p.setFrames([SPRITE.attacks.fire_0, SPRITE.attacks.fire_1], 110);
+            projs.push(p);
+          }
+          return projs;
+        },
+      },
+    ],
+
+    papyrus: [
+      {
+        id: 'bonesides',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 420)) return [];
+          const fromLeft = Math.random() > 0.5;
+          return [new Projectile(
+            fromLeft ? box.x - 60 : box.x + box.w + 60,
+            rand(box.y + 10, box.y + box.h - 22),
+            fromLeft ? 3.0 : -3.0, 0,
+            50, 10, SPRITE.attacks.bone_h
+          )];
+        },
+      },
+      {
+        id: 'bonejump',
+        spawn(t, dt, box) {
+          // Ossos subindo do chão: o clássico "pule!" do Papyrus.
+          if (!beat(t, dt, 620)) return [];
+          const h = rand(28, 62);
+          return [new Projectile(
+            rand(box.x + 12, box.x + box.w - 22), box.y + box.h + h,
+            -2.6, 0, 10, h, SPRITE.attacks.bone_v
+          )];
+        },
+      },
+      {
+        id: 'bonegate',
+        spawn(t, dt, box) {
+          // Par de ossos (topo + base) deixando uma passagem no meio.
+          if (!beat(t, dt, 800)) return [];
+          const gapCenter = rand(box.y + 40, box.y + box.h - 40);
+          const gap = 46;
+          const topH = gapCenter - gap / 2 - box.y;
+          const botH = box.y + box.h - (gapCenter + gap / 2);
+          const x = box.x + box.w + 20;
+          const projs = [];
+          if (topH > 12)
+            projs.push(new Projectile(x, box.y, -3.2, 0, 10, topH, SPRITE.attacks.bone_loop));
+          if (botH > 12)
+            projs.push(new Projectile(x, gapCenter + gap / 2, -3.2, 0, 10, botH, SPRITE.attacks.bone_loop));
+          return projs;
+        },
+      },
+    ],
+
+    undyne: [
+      {
+        id: 'spearcross',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 300)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
           const side = Math.floor(Math.random() * 4);
           let x, y, vx, vy, angle;
-          const spd = 3.5;
+          const spd = 3.2;
           switch (side) {
-            case 0: x = box.x - 20;          y = cy + (Math.random() - 0.5) * box.h * 0.8; vx = spd; vy = 0; angle = 0; break;
-            case 1: x = box.x + box.w + 20;  y = cy + (Math.random() - 0.5) * box.h * 0.8; vx = -spd; vy = 0; angle = Math.PI; break;
-            case 2: x = cx + (Math.random() - 0.5) * box.w * 0.8; y = box.y - 20;          vx = 0; vy = spd; angle = Math.PI / 2; break;
-            default: x = cx + (Math.random() - 0.5) * box.w * 0.8; y = box.y + box.h + 20; vx = 0; vy = -spd; angle = -Math.PI / 2; break;
+            case 0: x = box.x - 30;         y = rand(box.y, box.y + box.h); vx = spd;  vy = 0;   angle = Math.PI / 2; break;
+            case 1: x = box.x + box.w + 30; y = rand(box.y, box.y + box.h); vx = -spd; vy = 0;   angle = -Math.PI / 2; break;
+            case 2: x = rand(box.x, box.x + box.w); y = box.y - 30;         vx = 0;    vy = spd; angle = Math.PI; break;
+            default: x = rand(box.x, box.x + box.w); y = box.y + box.h + 30; vx = 0;   vy = -spd; angle = 0; break;
           }
-          const p = new Projectile(x, y, vx, vy, 58, 14, SPRITE.attacks.spear);
+          const p = new Projectile(x, y, vx, vy, 14, 56, SPRITE.attacks.spear);
           p.angle = angle;
-          projs.push(p);
-        }
-        break;
-      }
-      case 'sans': {
-        // Bones from multiple sides
-        if (t % 200 < 16) {
+          return [p];
+        },
+      },
+      {
+        id: 'spearrain',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 260)) return [];
+          const p = new Projectile(
+            rand(box.x + 8, box.x + box.w - 22), box.y - 60,
+            0, 4.0, 14, 56, SPRITE.attacks.spear
+          );
+          p.angle = Math.PI;
+          return [p];
+        },
+      },
+      {
+        id: 'spearburst',
+        spawn(t, dt, box) {
+          // Rajada radial de lanças brancas.
+          if (!beat(t, dt, 1300)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const dist = Math.max(box.w, box.h) / 2 + 50;
+          const count = 8;
+          const offset = Math.random() * Math.PI * 2;
+          const projs = [];
+          for (let i = 0; i < count; i++) {
+            const a = offset + (i / count) * Math.PI * 2;
+            const p = new Projectile(
+              cx + Math.cos(a) * dist - 14, cy + Math.sin(a) * dist - 14,
+              -Math.cos(a) * 2.6, -Math.sin(a) * 2.6,
+              28, 28, SPRITE.attacks.spear_white
+            );
+            projs.push(p);
+          }
+          return projs;
+        },
+      },
+    ],
+
+    sans: [
+      {
+        id: 'bonebarrage',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 220)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
           const side = Math.floor(Math.random() * 4);
           let x, y, vx, vy;
-          const spd = 4;
+          const spd = 3.6;
           switch (side) {
-            case 0: x = box.x - 20;          y = cy + (Math.random() - 0.5) * box.h; vx = spd; vy = 0; break;
-            case 1: x = box.x + box.w + 20;  y = cy + (Math.random() - 0.5) * box.h; vx = -spd; vy = 0; break;
-            case 2: x = cx + (Math.random() - 0.5) * box.w; y = box.y - 20;          vx = 0; vy = spd; break;
-            default: x = cx + (Math.random() - 0.5) * box.w; y = box.y + box.h + 20; vx = 0; vy = -spd; break;
+            case 0: x = box.x - 60;         y = rand(box.y, box.y + box.h); vx = spd;  vy = 0;   break;
+            case 1: x = box.x + box.w + 60; y = rand(box.y, box.y + box.h); vx = -spd; vy = 0;   break;
+            case 2: x = rand(box.x, box.x + box.w); y = box.y - 60;         vx = 0;    vy = spd; break;
+            default: x = rand(box.x, box.x + box.w); y = box.y + box.h + 60; vx = 0;   vy = -spd; break;
           }
           const isH = Math.abs(vx) > Math.abs(vy);
-          const p = new Projectile(x, y, vx, vy,
-            isH ? 42 : 12, isH ? 12 : 56,
-            isH ? SPRITE.attacks.bone_h : SPRITE.attacks.bone_v);
-          projs.push(p);
-        }
-        // Gaster blaster wave (every 2 seconds)
-        if (t % 2000 < 16) {
-          const gx = box.x + Math.random() * (box.w - 60);
-          const p = new Projectile(gx, box.y - 30, 0, 3.0, 56, 64, SPRITE.gaster[0]);
-          p._gasterFrame = 0;
-          p._gasterTimer = 0;
-          p.updateCustom = function (dt) {
-            this._gasterTimer += dt;
-            if (this._gasterTimer > 80) {
-              this._gasterTimer = 0;
-              this._gasterFrame = (this._gasterFrame + 1) % SPRITE.gaster.length;
-              this.spriteKey = SPRITE.gaster[this._gasterFrame];
-            }
-          };
-          projs.push(p);
-        }
-        break;
-      }
-      case 'flowey': {
-        if (t % 250 < 16) {
-          const angle = Math.random() * Math.PI * 2;
-          const dist = Math.max(box.w, box.h) / 2 + 30;
-          const startX = cx + Math.cos(angle) * dist;
-          const startY = cy + Math.sin(angle) * dist;
-          const spd = 2.8;
-          const vx = -Math.cos(angle) * spd;
-          const vy = -Math.sin(angle) * spd;
+          return [new Projectile(x, y, vx, vy,
+            isH ? 50 : 10, isH ? 10 : 50,
+            isH ? SPRITE.attacks.bone_h : SPRITE.attacks.bone_v)];
+        },
+      },
+      {
+        id: 'blasters',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 1200)) return [];
+          const p = new Projectile(
+            rand(box.x, box.x + box.w - 44), box.y - 70,
+            0, 2.6, 43, 57, SPRITE.gaster[0]
+          );
+          p.setFrames(SPRITE.gaster, 80);
+          return [p];
+        },
+      },
+      {
+        id: 'bonewall',
+        spawn(t, dt, box) {
+          // Paredes alternadas em cima e embaixo — força movimento vertical.
+          if (!beat(t, dt, 700)) return [];
+          const fromTop = Math.floor(t / 700) % 2 === 0;
+          const h = box.h * 0.55;
+          return [new Projectile(
+            box.x + box.w + 20,
+            fromTop ? box.y : box.y + box.h - h,
+            -4.0, 0, 10, h, SPRITE.attacks.bone_loop
+          )];
+        },
+      },
+    ],
+
+    flowey: [
+      {
+        id: 'pelletring',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 260)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const a = Math.random() * Math.PI * 2;
+          const dist = Math.max(box.w, box.h) / 2 + 34;
+          const spd = 2.6;
           const sprite = Math.random() > 0.5 ? SPRITE.attacks.bullet_0 : SPRITE.attacks.bullet_1;
-          const p = new Projectile(startX, startY, vx, vy, 18, 18, sprite);
-          projs.push(p);
-        }
-        break;
-      }
-      case 'mettaton': {
-        if (t % 300 < 16) {
+          return [new Projectile(
+            cx + Math.cos(a) * dist, cy + Math.sin(a) * dist,
+            -Math.cos(a) * spd, -Math.sin(a) * spd,
+            16, 16, sprite
+          )];
+        },
+      },
+      {
+        id: 'pelletwave',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 340)) return [];
+          const p = new Projectile(
+            box.x + box.w + 20, rand(box.y + 12, box.y + box.h - 28),
+            -2.4, 0, 16, 16, SPRITE.attacks.bullet_1
+          );
+          p.setWobble(22, 0.008);
+          return [p];
+        },
+      },
+      {
+        id: 'pelletrain',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 500)) return [];
+          const projs = [];
+          for (let i = 0; i < 3; i++) {
+            projs.push(new Projectile(
+              rand(box.x + 6, box.x + box.w - 22), box.y - 20 - i * 26,
+              0, 3.0, 16, 16, SPRITE.attacks.bullet_0
+            ));
+          }
+          return projs;
+        },
+      },
+    ],
+
+    mettaton: [
+      {
+        id: 'bombs',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 360)) return [];
+          const p = new Projectile(
+            rand(box.x + 8, box.x + box.w - 32), box.y - 24,
+            0, 2.4, 24, 24, SPRITE.attacks.bomb_0
+          );
+          p.setFrames([SPRITE.attacks.bomb_0, SPRITE.attacks.bomb_1, SPRITE.attacks.bomb_2], 100);
+          return [p];
+        },
+      },
+      {
+        id: 'legs',
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 320)) return [];
           const fromLeft = Math.random() > 0.5;
-          const startX = fromLeft ? box.x - 20 : box.x + box.w + 20;
-          const vx = fromLeft ? 3.0 : -3.0;
-          const startY = box.y + Math.random() * box.h;
-          const p = new Projectile(startX, startY, vx, 0, 58, 14, SPRITE.attacks.spear);
-          p.angle = fromLeft ? 0 : Math.PI;
-          projs.push(p);
-        }
-        if (t % 600 < 16) {
-          const startX = box.x + Math.random() * box.w;
-          const p = new Projectile(startX, box.y - 20, 0, 3.5, 24, 24, SPRITE.attacks.bullet_0);
-          projs.push(p);
-        }
-        break;
-      }
-    }
-    return projs;
-  }
+          const p = new Projectile(
+            fromLeft ? box.x - 30 : box.x + box.w + 30,
+            rand(box.y + 6, box.y + box.h - 20),
+            fromLeft ? 3.2 : -3.2, 0,
+            14, 56, SPRITE.attacks.spear
+          );
+          p.angle = fromLeft ? Math.PI / 2 : -Math.PI / 2;
+          return [p];
+        },
+      },
+      {
+        id: 'showtime',
+        spawn(t, dt, box) {
+          const projs = [];
+          if (beat(t, dt, 500)) {
+            const p = new Projectile(
+              rand(box.x + 8, box.x + box.w - 32), box.y - 24,
+              rand(-0.8, 0.8), 2.6, 24, 24, SPRITE.attacks.bomb_0
+            );
+            p.setFrames([SPRITE.attacks.bomb_0, SPRITE.attacks.bomb_1, SPRITE.attacks.bomb_2], 100);
+            projs.push(p);
+          }
+          if (beat(t, dt, 380)) {
+            projs.push(new Projectile(
+              rand(box.x + 8, box.x + box.w - 24), box.y + box.h + 20,
+              0, -3.0, 16, 16, SPRITE.attacks.bullet_1
+            ));
+          }
+          return projs;
+        },
+      },
+    ],
+  };
 
   // ── Typewriter ────────────────────────────────────────────
   class Typewriter {
@@ -543,23 +942,16 @@
       }
     }
 
-    render(ctx, x, y, maxWidth) {
-      ctx.fillStyle = '#fff';
-      ctx.font = '18px "Press Start 2P", monospace';
-      const words = this.displayText.split(' ');
-      let line = '';
+    render(ctx, x, y, maxWidth, opts) {
+      const o = opts || {};
+      ctx.fillStyle = o.color || '#fff';
+      ctx.font = o.font || '15px "Press Start 2P", monospace';
+      const lineHeight = o.lineHeight || 26;
       let ly = y;
-      for (const word of words) {
-        const test = line + (line ? ' ' : '') + word;
-        if (ctx.measureText(test).width > maxWidth && line) {
-          ctx.fillText(line, x, ly);
-          line = word;
-          ly += 28;
-        } else {
-          line = test;
-        }
+      for (const line of wrapText(ctx, this.displayText, maxWidth)) {
+        ctx.fillText(line, x, ly);
+        ly += lineHeight;
       }
-      if (line) ctx.fillText(line, x, ly);
     }
   }
 
@@ -632,16 +1024,25 @@
       this.sprites = {};
       this.running = false;
 
+      // Fala do monstro → balão ao lado dele; resto → caixa de texto.
+      this.speechActive = false;
+      this.bossRect = { x: CANVAS_W / 2 - 40, y: BOSS_AREA_TOP, w: 80, h: 80 };
+
       this.menuIndex = 0;
       this.menuOptions = ['fight', 'act', 'item', 'mercy'];
       this.subMenuIndex = 0;
       this.subMenuItems = [];
 
-      this.fightBar = { active: false, pos: 0, speed: 6, stopped: false };
+      this.fightBar = { active: false, pos: 0, speed: FIGHT_BAR_SPEED, stopped: false };
       this.enemyTurnTimer = 0;
       this.enemyTurnDuration = 0;
+      this.attackPattern = null;
+      this.lastAttackId = null;
+      this.soulEntered = false;
       this.introStep = 0;
       this.dialogueIndex = 0;
+      this.messageTimer = 0;
+      this.messageNext = STATE.MENU;
       this.winTimer = 0;
       this.loseTimer = 0;
       this.losePhase = 0;
@@ -690,22 +1091,46 @@
 
     _pressed(k) { return !!this.justPressed[k]; }
 
+    // Fala do monstro (balão) x texto de sistema (caixa de texto).
+    _say(text, isSpeech) {
+      this.speechActive = !!isSpeech;
+      this.typewriter.setText(text);
+    }
+
+    // Mostra um texto e só então avança para o próximo estado.
+    _showMessage(text, isSpeech, nextState) {
+      this.messageNext = nextState;
+      this.messageTimer = 0;
+      this._say(text, isSpeech);
+      this.setState(STATE.MESSAGE);
+    }
+
+    // Sorteia um padrão diferente do usado no turno anterior.
+    _pickAttackPattern() {
+      const all = ATTACK_PATTERNS[this.boss.attackType] || [];
+      if (all.length === 0) return null;
+      const pool = all.length > 1
+        ? all.filter(p => p.id !== this.lastAttackId)
+        : all;
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      this.lastAttackId = chosen.id;
+      return chosen;
+    }
+
     setState(newState) {
       this.state = newState;
       switch (newState) {
         case STATE.INTRO:
           this.introStep = 0;
           this.dialogueIndex = 0;
-          this.typewriter.setText(
-            this.boss.dialogue[0],
-            () => { this.introStep = 1; }
-          );
+          this._say(this.boss.dialogue[0], true);
+          this.typewriter.onDone = () => { this.introStep = 1; };
           break;
         case STATE.MENU:
           this.menuIndex = 0;
           break;
         case STATE.FIGHT_ANIM:
-          this.fightBar = { active: true, pos: 0, speed: 6, stopped: false };
+          this.fightBar = { active: true, pos: 0, speed: FIGHT_BAR_SPEED, stopped: false };
           break;
         case STATE.ACT_SELECT:
           this.subMenuIndex = 0;
@@ -721,12 +1146,13 @@
           this.enemyTurnTimer = 0;
           this.enemyTurnDuration = 5000 + Math.random() * 3000;
           this.projectiles = [];
-          this.soul.x = this.battleBox.x + this.battleBox.w / 2 - SOUL_SIZE / 2;
-          this.soul.y = this.battleBox.y + this.battleBox.h / 2 - SOUL_SIZE / 2;
+          this.attackPattern = this._pickAttackPattern();
+          this.speechActive = false;
+          this._placeSoulForTurn();
           break;
         case STATE.WIN:
           this.winTimer = 0;
-          this.typewriter.setText('* VOCÊ VENCEU!');
+          this._say('* VOCÊ VENCEU!', false);
           break;
         case STATE.LOSE:
           this.loseTimer = 0;
@@ -734,6 +1160,24 @@
           this.retryAvailable = false;
           break;
       }
+    }
+
+    // No primeiro turno a alma entra voando do menu; depois só reposiciona.
+    _placeSoulForTurn() {
+      const targetX = this.battleBox.x + this.battleBox.w / 2 - SOUL_SIZE / 2;
+      const targetY = this.battleBox.y + this.battleBox.h / 2 - SOUL_SIZE / 2;
+
+      if (this.soulEntered) {
+        this.soul.x = targetX;
+        this.soul.y = targetY;
+        return;
+      }
+
+      this.soulEntered = true;
+      this.soul.startEntry(
+        BOX_X - 20, MENU_Y + MENU_BTN_H / 2 - SOUL_SIZE / 2,
+        targetX, targetY
+      );
     }
 
     gameLoop(timestamp) {
@@ -760,7 +1204,7 @@
               this.typewriter.skip();
             } else if (this.dialogueIndex < this.boss.dialogue.length - 1) {
               this.dialogueIndex++;
-              this.typewriter.setText(this.boss.dialogue[this.dialogueIndex]);
+              this._say(this.boss.dialogue[this.dialogueIndex], true);
             } else {
               this.setState(STATE.MENU);
             }
@@ -779,8 +1223,7 @@
                 if (this.boss.spareable) {
                   this.setState(STATE.WIN);
                 } else {
-                  this.typewriter.setText('* Não é possível poupar ainda...');
-                  this.setState(STATE.ENEMY_TURN);
+                  this._showMessage('* Não é possível poupar ainda...', false, STATE.ENEMY_TURN);
                 }
                 break;
             }
@@ -814,21 +1257,29 @@
           if (this._pressed('cancel'))    this.setState(STATE.MENU);
           if (this._pressed('confirm')) {
             if (this.subMenuIndex === 0) {
-              this.typewriter.setText(`* ${this.boss.name} - ATK ${this.boss.atk} DEF ${this.boss.def}`);
+              this._showMessage(
+                `* ${this.boss.name} - ATK ${this.boss.atk} DEF ${this.boss.def}`,
+                false, STATE.ENEMY_TURN
+              );
             } else {
               this.boss.actCount++;
               if (this.boss.actCount >= this.boss.spareAfterActs) {
                 this.boss.spareable = true;
-                this.typewriter.setText(`* ${this.boss.name} parece estar cedendo...`);
+                this._showMessage(
+                  `* ${this.boss.name} parece estar cedendo...`,
+                  false, STATE.ENEMY_TURN
+                );
               } else {
                 const msgs = [
                   `* Você usou ${this.subMenuItems[this.subMenuIndex]} em ${this.boss.name}.`,
                   `* ${this.boss.name} não sabe como reagir.`,
                 ];
-                this.typewriter.setText(msgs[Math.floor(Math.random() * msgs.length)]);
+                this._showMessage(
+                  msgs[Math.floor(Math.random() * msgs.length)],
+                  false, STATE.ENEMY_TURN
+                );
               }
             }
-            this.setState(STATE.ENEMY_TURN);
           }
           break;
 
@@ -840,32 +1291,42 @@
             if (this.cartItems.length > 0) {
               const item = this.cartItems[this.subMenuIndex];
               this.soul.hp = Math.min(this.soul.maxHp, this.soul.hp + item.heal);
-              this.typewriter.setText(`* Você usou ${item.name}. Recuperou ${item.heal} HP!`);
               this.cartItems.splice(this.subMenuIndex, 1);
+              this._showMessage(
+                `* Você usou ${item.name}. Recuperou ${item.heal} HP!`,
+                false, STATE.ENEMY_TURN
+              );
+            } else {
+              this._showMessage('* Você não tem itens.', false, STATE.MENU);
             }
-            this.setState(STATE.ENEMY_TURN);
           }
           break;
 
-        case STATE.ENEMY_TURN:
+        case STATE.MESSAGE:
+          if (this._pressed('confirm')) {
+            if (!this.typewriter.done) this.typewriter.skip();
+            else this.setState(this.messageNext);
+          } else if (this.typewriter.done) {
+            this.messageTimer += dt;
+            if (this.messageTimer > 1400) this.setState(this.messageNext);
+          }
+          break;
+
+        case STATE.ENEMY_TURN: {
           this.soul.update(this.keys, this.battleBox, dt);
           this.enemyTurnTimer += dt;
 
-          const newProjs = generateAttacks(
-            this.boss.attackType, this.enemyTurnTimer, this.battleBox
-          );
-          this.projectiles.push(...newProjs);
+          if (this.attackPattern && !this.soul.entering) {
+            this.projectiles.push(
+              ...this.attackPattern.spawn(this.enemyTurnTimer, dt, this.battleBox)
+            );
+          }
 
           const soulBox = this.soul.getHitbox();
           for (const p of this.projectiles) {
             p.update(dt);
-            if (p.updateCustom) p.updateCustom(dt);
             if (p.alive && aabb(soulBox, p.getHitbox())) {
-              if (this.soul.takeDamage(this.boss.atk)) {
-                this.floatingTexts.push(
-                  new FloatingText(`-${this.boss.atk}`, this.soul.x, this.soul.y - 10, '#ff0')
-                );
-              }
+              this.soul.takeDamage(this.boss.atk);
             }
           }
           this.projectiles = this.projectiles.filter(p => p.alive);
@@ -877,10 +1338,11 @@
             const nextDialogue = this.boss.dialogue[
               Math.floor(Math.random() * this.boss.dialogue.length)
             ];
-            this.typewriter.setText(nextDialogue);
             this.setState(STATE.MENU);
+            this._say(nextDialogue, true);
           }
           break;
+        }
 
         case STATE.WIN:
           this.winTimer += dt;
@@ -905,6 +1367,7 @@
             this.boss.spareable = false;
             this.projectiles = [];
             this.floatingTexts = [];
+            this.soulEntered = false;
             this.setState(STATE.INTRO);
           }
           if (this.losePhase === 1 && this._pressed('cancel')) {
@@ -922,9 +1385,9 @@
       const dmg = Math.max(1, baseDmg - this.boss.def);
       this.boss.currentHp = Math.max(0, this.boss.currentHp - dmg);
       this.boss.shakeTimer = 400;
-      const bossDrawY = 50;
       this.floatingTexts.push(
-        new FloatingText(String(dmg), CANVAS_W / 2 - 10, bossDrawY + 40, '#ff0')
+        new FloatingText(String(dmg), this.bossRect.x + this.bossRect.w / 2 - 10,
+                         this.bossRect.y + this.bossRect.h / 2, '#ff0')
       );
       this.fightBar._resultTimer = 1200;
     }
@@ -948,23 +1411,19 @@
         return;
       }
 
-      if (this.state !== STATE.FIGHT_ANIM) {
-        this._renderDialogue(ctx);
-      }
-
       this._renderBattleBox(ctx);
 
       if (this.state === STATE.ENEMY_TURN) {
         for (const p of this.projectiles) p.render(ctx, this.sprites);
         this.soul.render(ctx, this.sprites);
-      }
-
-      if (this.state === STATE.FIGHT_ANIM) {
+      } else if (this.state === STATE.FIGHT_ANIM) {
         this._renderFightBar(ctx);
-      }
-
-      if (this.state === STATE.ACT_SELECT || this.state === STATE.ITEM_SELECT) {
+      } else if (this.state === STATE.ACT_SELECT || this.state === STATE.ITEM_SELECT) {
         this._renderSubMenu(ctx);
+      } else if (this.speechActive) {
+        this._renderSpeechBubble(ctx);
+      } else {
+        this._renderDialogue(ctx);
       }
 
       if (this.state === STATE.MENU) {
@@ -981,72 +1440,88 @@
     }
 
     _renderBoss(ctx) {
-      const scale = this.boss.spriteScale || 3;
       const keys = this.boss.spriteKeys;
       let shakeX = 0;
       if (this.boss.shakeTimer > 0)
         shakeX = (Math.random() - 0.5) * 6;
+
+      const areaH = BOSS_AREA_BOTTOM - BOSS_AREA_TOP;
+      const areaW = CANVAS_W - 120;
 
       if (this.boss.name === 'Sans') {
         // Composite Sans from 3 parts
         const face = this.sprites[SPRITE.bosses.sans[0]];
         const torso = this.sprites[SPRITE.bosses.sans[1]];
         const legs = this.sprites[SPRITE.bosses.sans[2]];
-        const cx = CANVAS_W / 2;
-        const baseY = 30;
-        if (legs)  ctx.drawImage(legs,  cx - (29 * scale) / 2 + shakeX, baseY + 27 * scale + 32 * scale, 29 * scale, 29 * scale);
-        if (torso) ctx.drawImage(torso, cx - (37 * scale) / 2 + shakeX, baseY + 27 * scale, 37 * scale, 32 * scale);
-        if (face)  ctx.drawImage(face,  cx - (27 * scale) / 2 + shakeX, baseY, 27 * scale, 27 * scale);
-      } else {
-        const key = keys[0];
-        const img = this.sprites[SPRITE.bosses[key] && SPRITE.bosses[key][0]];
-        if (img) {
-          const w = img.width * scale;
-          const h = img.height * scale;
-          const dx = (CANVAS_W - w) / 2 + shakeX;
-          const dy = Math.max(10, BOX_Y - h - 20);
-          ctx.drawImage(img, dx, dy, w, h);
-        }
+        if (!face || !torso || !legs) return;
+
+        const natW = Math.max(face.width, torso.width, legs.width);
+        const natH = face.height + torso.height + legs.height;
+        const scale = Math.min(this.boss.spriteScale || 2, areaH / natH, areaW / natW);
+        const w = natW * scale;
+        const h = natH * scale;
+        const cx = CANVAS_W / 2 + shakeX;
+        let y = BOSS_AREA_BOTTOM - h;
+
+        ctx.drawImage(face, cx - (face.width * scale) / 2, y, face.width * scale, face.height * scale);
+        y += face.height * scale;
+        ctx.drawImage(torso, cx - (torso.width * scale) / 2, y, torso.width * scale, torso.height * scale);
+        y += torso.height * scale;
+        ctx.drawImage(legs, cx - (legs.width * scale) / 2, y, legs.width * scale, legs.height * scale);
+
+        this.bossRect = { x: cx - w / 2, y: BOSS_AREA_BOTTOM - h, w, h };
+        return;
       }
+
+      const key = keys[0];
+      const img = this.sprites[SPRITE.bosses[key] && SPRITE.bosses[key][0]];
+      if (!img) return;
+
+      // A escala do sprite é limitada pela faixa reservada, então o
+      // monstro nunca cobre a caixa onde fica a alma.
+      const scale = Math.min(this.boss.spriteScale || 2, areaH / img.height, areaW / img.width);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      const dx = (CANVAS_W - w) / 2 + shakeX;
+      const dy = BOSS_AREA_BOTTOM - h;
+      ctx.drawImage(img, dx, dy, w, h);
+
+      this.bossRect = { x: dx, y: dy, w, h };
     }
 
     _renderBattleBox(ctx) {
       const b = this.battleBox;
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = BOX_BORDER;
-      ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+      ctx.strokeRect(
+        b.x + BOX_BORDER / 2, b.y + BOX_BORDER / 2,
+        b.w - BOX_BORDER, b.h - BOX_BORDER
+      );
     }
 
     _renderMenu(ctx) {
       const btnNames = ['fight', 'act', 'item', 'mercy'];
-      const btnW = 108;
-      const btnH = 42;
-      const scale = 2;
-      const totalW = btnNames.length * btnW * scale + (btnNames.length - 1) * 16;
-      let startX = (CANVAS_W - totalW) / 2;
-      const y = BOX_Y + BOX_H + 18;
+      let x = BOX_X;
 
       for (let i = 0; i < btnNames.length; i++) {
         const sel = i === this.menuIndex ? 1 : 0;
-        const key = SPRITE.buttons[btnNames[i]][sel];
-        const img = this.sprites[key];
-        if (img) {
-          ctx.drawImage(img, startX, y, btnW * scale, btnH * scale);
-        }
+        const img = this.sprites[SPRITE.buttons[btnNames[i]][sel]];
+        if (img) ctx.drawImage(img, x, MENU_Y, MENU_BTN_W, MENU_BTN_H);
+
         if (i === this.menuIndex) {
           const heartImg = this.sprites[SPRITE.soul];
           if (heartImg)
-            ctx.drawImage(heartImg, startX - 24, y + (btnH * scale) / 2 - 8, 16, 16);
+            ctx.drawImage(heartImg, x - 20, MENU_Y + MENU_BTN_H / 2 - 8, 16, 16);
         }
-        startX += btnW * scale + 16;
+        x += MENU_BTN_W + MENU_GAP;
       }
     }
 
     _renderSubMenu(ctx) {
       const b = this.battleBox;
-      const x = b.x + 30;
-      let y = b.y + 30;
-      ctx.font = '16px "Press Start 2P", monospace';
+      const x = b.x + 44;
+      let y = b.y + 38;
+      ctx.font = '15px "Press Start 2P", monospace';
 
       for (let i = 0; i < this.subMenuItems.length; i++) {
         const label = typeof this.subMenuItems[i] === 'string'
@@ -1057,80 +1532,128 @@
           ctx.fillStyle = '#ff0';
           const heartImg = this.sprites[SPRITE.soul];
           if (heartImg)
-            ctx.drawImage(heartImg, x - 20, y - 10, 14, 14);
+            ctx.drawImage(heartImg, x - 26, y - 12, 14, 14);
         } else {
           ctx.fillStyle = '#fff';
         }
         ctx.fillText(label, x, y);
-        y += 28;
+        y += 30;
       }
     }
 
     _renderFightBar(ctx) {
-      const barW = 300;
-      const barH = 14;
-      const bx = (CANVAS_W - barW) / 2;
-      const by = BOX_Y + BOX_H / 2 - barH / 2;
+      const b = this.battleBox;
+      const barX = b.x + 14;
+      const barW = b.w - 28;
+      const barH = 16;
+      const barY = b.y + b.h / 2 - barH / 2;
 
       ctx.fillStyle = '#333';
-      ctx.fillRect(bx, by, barW, barH);
+      ctx.fillRect(barX, barY, barW, barH);
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
-      ctx.strokeRect(bx, by, barW, barH);
+      ctx.strokeRect(barX, barY, barW, barH);
 
       // Center mark
       ctx.fillStyle = '#0f0';
-      ctx.fillRect(bx + barW / 2 - 2, by - 4, 4, barH + 8);
+      ctx.fillRect(barX + barW / 2 - 2, barY - 6, 4, barH + 12);
 
       // Moving cursor
-      if (!this.fightBar.stopped) {
-        const cx = bx + (this.fightBar.pos / 100) * barW;
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(cx - 2, by - 6, 4, barH + 12);
-      } else {
-        const cx = bx + (this.fightBar.pos / 100) * barW;
-        ctx.fillStyle = '#ff0';
-        ctx.fillRect(cx - 2, by - 6, 4, barH + 12);
-      }
+      const cx = barX + (this.fightBar.pos / 100) * barW;
+      ctx.fillStyle = this.fightBar.stopped ? '#ff0' : '#fff';
+      ctx.fillRect(cx - 2, barY - 10, 4, barH + 20);
     }
 
     _renderDialogue(ctx) {
-      this.typewriter.render(ctx, BOX_X + 20, BOX_Y - 30, BOX_W - 40);
+      this.typewriter.render(
+        ctx, BOX_X + 26, BOX_Y + 42, BOX_W - 52,
+        { font: '15px "Press Start 2P", monospace', lineHeight: 28 }
+      );
+    }
+
+    // Balão de fala estilo Undertale, ancorado ao lado do monstro.
+    _renderSpeechBubble(ctx) {
+      const r = this.bossRect;
+      const font = '13px "Press Start 2P", monospace';
+      const lineHeight = 22;
+      const padX = 16;
+      const padY = 18;
+      const maxTextW = 250;
+
+      ctx.font = font;
+      // O balão é dimensionado pelo texto completo para não "crescer"
+      // enquanto o typewriter digita.
+      const fullLines = wrapText(ctx, this.typewriter.text, maxTextW);
+      const textW = Math.max(...fullLines.map(l => ctx.measureText(l).width));
+      const w = Math.ceil(textW) + padX * 2;
+      const h = fullLines.length * lineHeight + padY * 2 - (lineHeight - 14);
+
+      // Prefere a direita do monstro; cai para a esquerda se não couber.
+      let bx = r.x + r.w + 20;
+      let tailRight = false;
+      if (bx + w > CANVAS_W - 8) {
+        bx = r.x - 20 - w;
+        tailRight = true;
+      }
+      bx = Math.max(8, Math.min(bx, CANVAS_W - w - 8));
+
+      let by = r.y + r.h * 0.2 - h / 2;
+      by = Math.max(10, Math.min(by, BOX_Y - h - 14));
+
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(bx, by, w, h);
+
+      // "Rabinho" apontando para o monstro.
+      const tailY = Math.min(by + 22, by + h - 26);
+      ctx.beginPath();
+      if (tailRight) {
+        ctx.moveTo(bx + w, tailY);
+        ctx.lineTo(bx + w + 14, tailY + 8);
+        ctx.lineTo(bx + w, tailY + 18);
+      } else {
+        ctx.moveTo(bx, tailY);
+        ctx.lineTo(bx - 14, tailY + 8);
+        ctx.lineTo(bx, tailY + 18);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      this.typewriter.render(
+        ctx, bx + padX, by + padY + 4, maxTextW,
+        { color: '#000', font, lineHeight }
+      );
     }
 
     _renderHUD(ctx) {
-      const y = BOX_Y + BOX_H + 10;
-      const hudY = this.state === STATE.MENU ? y + 95 : y + 15;
-
       ctx.font = '14px "Press Start 2P", monospace';
 
       // Name
       ctx.fillStyle = '#ff0';
-      ctx.fillText('CHARA', BOX_X, hudY);
+      ctx.fillText('CHARA', BOX_X, HUD_Y);
 
       // LV
       ctx.fillStyle = '#fff';
-      ctx.fillText('LV 1', BOX_X + 110, hudY);
+      ctx.fillText('LV 1', BOX_X + 110, HUD_Y);
 
       // HP label
       ctx.fillStyle = '#fff';
-      ctx.fillText('HP', BOX_X + 200, hudY);
+      ctx.fillText('HP', BOX_X + 200, HUD_Y);
 
       // HP bar background (red = lost health)
       const barX = BOX_X + 240;
       const barW = 120;
       const barH = 16;
       ctx.fillStyle = '#600';
-      ctx.fillRect(barX, hudY - 12, barW, barH);
+      ctx.fillRect(barX, HUD_Y - 12, barW, barH);
 
       // HP bar fill (yellow = current)
       const ratio = Math.max(0, this.soul.displayHp / this.soul.maxHp);
       ctx.fillStyle = '#ff0';
-      ctx.fillRect(barX, hudY - 12, barW * ratio, barH);
+      ctx.fillRect(barX, HUD_Y - 12, barW * ratio, barH);
 
       // HP numbers
       ctx.fillStyle = '#fff';
-      ctx.fillText(`${Math.ceil(this.soul.hp)} / ${this.soul.maxHp}`, barX + barW + 10, hudY);
+      ctx.fillText(`${Math.ceil(this.soul.hp)} / ${this.soul.maxHp}`, barX + barW + 10, HUD_Y);
     }
 
     _renderWin(ctx) {
@@ -1144,7 +1667,7 @@
 
       ctx.font = '14px "Press Start 2P", monospace';
       ctx.fillStyle = '#fff';
-      const sub = '* A compra foi finalizada com sucesso!';
+      const sub = '* O item foi adicionado ao carrinho!';
       const sw = ctx.measureText(sub).width;
       ctx.fillText(sub, (CANVAS_W - sw) / 2, CANVAS_H / 2 + 40);
     }
