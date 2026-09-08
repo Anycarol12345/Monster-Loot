@@ -2,149 +2,363 @@
    MONSTER LOOT - Lógica da Loja
    =============================================== */
 
+function productImages(folder, count) {
+    return Array.from({ length: count }, (_, i) =>
+        `assets/img/products/${folder}/${String(i + 1).padStart(2, '0')}.jpg`
+    );
+}
+
 const PRODUCTS = [
     {
-        id: 'froggit-keychain',
-        name: 'Froggit Chaveiro',
-        desc: '* Froggit não entende o que está acontecendo, mas faz o melhor que pode.',
-        longDesc: '* Um chaveiro de borracha macia com o formato do Froggit, o monstro mais amigável das Ruínas.\n* Ele não entende muito bem o que você está dizendo, mas está fazendo o melhor que pode.\n* Acompanha argola metálica reforçada e brilha levemente no escuro.',
+        id: 'human-figure',
+        name: 'Figura The Human',
+        desc: '* Frisk em PVC, com graveto na mão e base oficial Fangamer.',
+        longDesc: '* Figura colecionável THE HUMAN: Frisk com o suéter azul de listras rosa, graveto na mão e base circular preta.\n* Inclui a marcação oficial na base: UNDERTALE, Fangamer e Happy Worker.\n* Também fotografada na edição Hot Dog Stack, equilibrando uma torre de hot dogs em Snowdin.',
         price: 200,
         boss: 'froggit',
-        sprite: 'assets/sprites/bosses/froggit.png',
-        scale: 4,
-        images: [],
+        images: productImages('human-figure', 4),
         specs: {
             'Origem': 'Ruínas',
-            'Material': 'Borracha PVC',
-            'Dimensões': '5 x 5 cm',
-            'Peso': '30 g',
-            'Raridade': 'Comum'
+            'Material': 'PVC',
+            'Personagem': 'Frisk',
+            'Base': 'Circular preta',
+            'Raridade': 'Rara'
         }
     },
     {
         id: 'napsta-vinyl',
-        name: 'Napstablook Vinyl',
-        desc: '* Um disco de vinil com as melhores faixas fantasmagóricas do Underground.',
-        longDesc: '* Disco de vinil 12" prensado em vinil translúcido, com as melhores faixas do DJ fantasma mais tímido do Underground.\n* Inclui a faixa oculta "Spooktune" e o remix "Ghouliday".\n* oh... você comprou mesmo... obrigado... isso significa muito...',
+        name: 'Vinil Chitei de Chill',
+        desc: '* Disco duplo do 10º aniversário. Napstablook no comando do set.',
+        longDesc: '* UNDERTALE: Chitei de Chill — vinil duplo de aniversário com capa ilustrada do Underground em modo relax.\n* Napstablook DJa na sala enquanto Sans cochila, Papyrus chega com espaguete e Frisk assiste no tapete.\n* oh... você comprou mesmo... obrigado... isso significa muito...',
         price: 350,
         boss: 'napstablook',
-        sprite: 'assets/sprites/bosses/napstablook.png',
-        scale: 3,
-        images: [],
+        images: productImages('chitei-vinyl', 1),
         specs: {
             'Origem': 'Ruínas',
-            'Formato': 'Vinil 12" 33 RPM',
-            'Faixas': '8 + 1 oculta',
-            'Peso': '180 g',
+            'Formato': 'Vinil duplo 12"',
+            'Edição': '10º aniversário',
+            'Selo': 'Square Enix / Toby Fox',
             'Raridade': 'Incomum'
         }
     },
     {
-        id: 'toriel-pie',
-        name: 'Torta da Toriel',
-        desc: '* Torta de Butterscotch-Cinnamon. Feita com muito carinho materno.',
-        longDesc: '* Torta artesanal de butterscotch com canela, assada na lareira da casa das Ruínas.\n* Restaura HP completo e aquece o coração de qualquer humano perdido.\n* Preparada com muito carinho. Não pergunte sobre os caracóis.',
+        id: 'toriel-kitchen',
+        name: 'Kit Cozinha da Toriel',
+        desc: '* Luva, descanso e avental Delta Rune. A torta é por sua conta.',
+        longDesc: '* Kit de cozinha inspirado na casa das Ruínas: luva pelúcia da Toriel, descanso de panela Delta Rune e avental roxo com o símbolo da família.\n* A assadeira ilustrada entra na foto com uma torta de butterscotch-canela recém-saída do forno.\n* Preparado com muito carinho. Não pergunte sobre os caracóis.',
         price: 500,
         boss: 'toriel',
-        sprite: 'assets/sprites/bosses/toriel.png',
-        scale: 2,
-        images: [],
+        images: productImages('toriel-kitchen', 2),
         specs: {
             'Origem': 'Ruínas',
-            'Sabor': 'Butterscotch-Canela',
-            'Validade': '7 dias',
-            'Cura': 'HP máximo',
+            'Itens': 'Luva, descanso, avental',
+            'Tema': 'Delta Rune',
+            'Uso': 'Cozinha',
             'Raridade': 'Rara'
         }
     },
     {
-        id: 'papyrus-figure',
-        name: 'Papyrus Action Figure',
-        desc: '* NYEH HEH HEH! Uma réplica perfeita do GRANDE PAPYRUS!',
-        longDesc: '* NYEH HEH HEH! CONTEMPLE! UMA RÉPLICA EM ESCALA DO GRANDE PAPYRUS!\n* Figura articulada com 12 pontos de movimento, cachecol de tecido real e acessórios: um prato de espaguete e dois ossos de ataque.\n* ACOMPANHA BASE DE EXIBIÇÃO COM O EMBLEMA DA GUARDA REAL!',
+        id: 'papyrus-plush',
+        name: 'Pelúcia Papyrus',
+        desc: '* NYEH HEH HEH! O GRANDE PAPYRUS, agora abraçável!',
+        longDesc: '* NYEH HEH HEH! CONTEMPLE! UMA PELÚCIA EM ESCALA DO GRANDE PAPYRUS!\n* Caveira costurada com o sorriso triunfante, cachecol laranja e o espírito inabalável da Guarda Real.\n* PERFEITO PARA TREINOS DE PUZZLE NO GRAMADO!',
         price: 750,
         boss: 'papyrus',
-        sprite: 'assets/sprites/bosses/papyrus.png',
-        scale: 1.5,
-        images: [],
+        images: productImages('papyrus-plush', 1),
         specs: {
             'Origem': 'Snowdin',
-            'Material': 'PVC + ABS',
-            'Altura': '18 cm',
-            'Articulações': '12 pontos',
+            'Material': 'Pelúcia',
+            'Personagem': 'Papyrus',
+            'Destaque': 'Cachecol laranja',
             'Raridade': 'Rara'
         }
     },
     {
-        id: 'undyne-spear',
-        name: 'Lança da Undyne',
-        desc: '* Uma réplica da lança energética. NGAHHH!! incluído.',
-        longDesc: '* Réplica em tamanho real da lança de energia da Capitã da Guarda Real.\n* Haste de alumínio com ponta em resina translúcida e LED azul integrado.\n* NGAHHH!! Não use para desafiar seus vizinhos para um duelo. (Ela faria isso.)',
+        id: 'collectors-edition',
+        name: "Collector's Edition",
+        desc: '* Caixa, relicário musical, trilha, partitura e o jogo físico.',
+        longDesc: '* A Collector\'s Edition oficial: caixa com relicário dourado Delta Rune, caixa de música "Best Friends Forever", trilha sonora, livreto de partituras e o jogo físico.\n* Versões Nintendo Switch e Xbox One fotografadas, com pano de microfibra exclusivo no pacote Switch.\n* O relicário toca. Você sente sua DETERMINAÇÃO aumentar.',
         price: 850,
         boss: 'undyne',
-        sprite: 'assets/sprites/bosses/undyne.png',
-        scale: 1.8,
-        images: [],
+        images: productImages('collectors-edition', 10),
         specs: {
-            'Origem': 'Waterfall',
-            'Material': 'Alumínio + Resina',
-            'Comprimento': '150 cm',
-            'Iluminação': 'LED azul',
+            'Origem': 'Underground',
+            'Conteúdo': 'Caixa + relicário + OST',
+            'Plataformas': 'Switch / Xbox One',
+            'Extra': 'Pano de microfibra',
             'Raridade': 'Épica'
         }
     },
     {
-        id: 'sans-plush',
-        name: 'Sans Pelúcia',
-        desc: '* o esqueleto mais preguiçoso do underground. vem com ketchup.',
-        longDesc: '* uma pelúcia bem macia do esqueleto mais preguiçoso do underground.\n* perfeita pra tirar um cochilo. ou pra colocar na sua estação de sentinela e fingir que você tá trabalhando.\n* acompanha um frasco de ketchup em miniatura. de nada.',
+        id: 'sans-hoodie',
+        name: 'Moletom Sans',
+        desc: '* zíper com caveira, capuz sherpa e forro de almas. heh.',
+        longDesc: '* moletom azul zip-up do esqueleto mais preguiçoso do underground.\n* capuz com sherpa branca, pingente de caveira no zíper e forro interno com almas, ossos e estrelas.\n* perfeito pra fingir que você tá na sentinela. de nada.',
         price: 999,
         boss: 'sans',
-        sprite: 'assets/sprites/bosses/sans_face.png',
-        scale: 4,
-        images: [],
+        images: productImages('sans-hoodie', 2),
         specs: {
             'Origem': 'Snowdin',
-            'Material': 'Poliéster / Algodão',
-            'Altura': '30 cm',
-            'Acessórios': 'Ketchup',
+            'Tipo': 'Moletom zip-up',
+            'Detalhe': 'Zíper caveira',
+            'Forro': 'Sherpa + almas',
             'Raridade': 'Lendária'
         }
     },
     {
-        id: 'flowey-pot',
-        name: 'Flowey no Vaso',
-        desc: '* Neste mundo, é matar ou morrer. Mas neste caso... é comprar ou morrer.',
-        longDesc: '* Uma linda flor dourada em vaso de cerâmica pintado à mão.\n* Perfeita para decorar sua mesa e observar cada movimento seu.\n* Neste mundo, é MATAR ou MORRER. Mas relaxa... essa aqui é só um enfeite. Provavelmente.',
+        id: 'flowey-plush',
+        name: 'Pelúcia Flowey',
+        desc: '* Neste mundo, é matar ou morrer. Ou levar a flor pra casa.',
+        longDesc: '* Pelúcia do Flowey no vasinho marrom, pétalas amarelas e aquele sorriso que não convence ninguém.\n* Perfeita para a mesa — e para observar cada movimento seu.\n* Neste mundo, é MATAR ou MORRER. Mas relaxa... essa aqui é só um enfeite. Provavelmente.',
         price: 666,
         boss: 'flowey',
-        sprite: 'assets/sprites/bosses/flowey.png',
-        scale: 3,
-        images: [],
+        images: productImages('flowey-plush', 1),
         specs: {
             'Origem': 'Ruínas',
-            'Material': 'Cerâmica + Seda',
-            'Altura': '22 cm',
-            'Cuidados': 'Não regar',
+            'Material': 'Pelúcia',
+            'Personagem': 'Flowey',
+            'Base': 'Vaso de tecido',
             'Raridade': 'Épica'
         }
     },
     {
-        id: 'mettaton-figure',
-        name: 'Mettaton EX Figure',
-        desc: '* OH YES! A estrela do Underground em forma colecionável.',
-        longDesc: '* OH YES! A ESTRELA MAIS BRILHANTE DO UNDERGROUND, AGORA NA SUA ESTANTE!\n* Figura premium com pintura metálica, pernas articuladas e base giratória com holofotes de LED.\n* Edição limitada numerada. As ratings vão explodir, querido!',
+        id: 'mettaton-plush',
+        name: 'Pelúcia Mettaton',
+        desc: '* OH YES! A forma caixa da estrela, pronta para o palco.',
+        longDesc: '* OH YES! METTATON NA FORMA CAIXA, AGORA DE PELÚCIA!\n* Grade vermelha e amarela, braços de palco e a pose perfeita em cima do piano.\n* As ratings vão explodir, querido!',
         price: 1200,
         boss: 'mettaton',
-        sprite: 'assets/sprites/bosses/mettaton_ex.png',
-        scale: 3,
-        images: [],
+        images: productImages('mettaton-plush', 1),
         specs: {
             'Origem': 'Hotland',
-            'Material': 'PVC metalizado',
-            'Altura': '25 cm',
-            'Extras': 'Base giratória LED',
+            'Material': 'Pelúcia',
+            'Forma': 'Caixa (Box Form)',
+            'Destaque': 'Grade MTT',
             'Raridade': 'Lendária'
+        }
+    },
+    {
+        id: 'toriel-keychain',
+        name: 'Chaveiro Toriel',
+        desc: '* Mini Toriel em PVC, braços abertos e argola reforçada.',
+        longDesc: '* Chaveiro 3D da Toriel em PVC: robe roxo, Delta Rune no peito e os braços abertos em boas-vindas.\n* Argola metálica reforçada. Cabe na palma da mão — e no coração, se você deixar.\n* Um pedaço das Ruínas para levar no bolso.',
+        price: 180,
+        boss: 'toriel',
+        images: productImages('toriel-keychain', 3),
+        specs: {
+            'Origem': 'Ruínas',
+            'Material': 'PVC + argola',
+            'Personagem': 'Toriel',
+            'Uso': 'Chaveiro',
+            'Raridade': 'Comum'
+        }
+    },
+    {
+        id: 'sans-jacket',
+        name: 'Jaqueta Souvenir Sans',
+        desc: '* sukajan bordada com Gaster Blasters, ossos e o olho azul.',
+        longDesc: '* jaqueta souvenir (sukajan) preta e branca com bordado denso do Sans, Gaster Blasters e chamas azuis.\n* zíper com puxador de osso, bolsos com detalhe ósseo e o verso inteiro em Grillby\'s energy.\n* heh. essa aqui não é pra dormir no posto. ou é?',
+        price: 1500,
+        boss: 'sans',
+        images: productImages('sans-jacket', 5),
+        specs: {
+            'Origem': 'Snowdin',
+            'Tipo': 'Jaqueta souvenir',
+            'Bordado': 'Sans + Gaster Blaster',
+            'Detalhe': 'Zíper de osso',
+            'Raridade': 'Lendária'
+        }
+    },
+    {
+        id: 'sans-pet-hoodie',
+        name: 'Moletom Pet Sans',
+        desc: '* o mesmo azul, agora no tamanho do seu cão sentinela.',
+        longDesc: '* moletom zip-up azul para pets, com capuz cinza, pingente de caveira e forro de almas.\n* fotografado em labrador sentado e em pé — porque até o cão merece um turno na sentinela.\n* inclui a calça preta do conjunto. heh.',
+        price: 420,
+        boss: 'sans',
+        images: productImages('sans-pet-hoodie', 2),
+        specs: {
+            'Origem': 'Snowdin',
+            'Tipo': 'Moletom pet',
+            'Público': 'Cães',
+            'Detalhe': 'Zíper caveira',
+            'Raridade': 'Incomum'
+        }
+    },
+    {
+        id: 'toriel-plush',
+        name: 'Pelúcia Toriel',
+        desc: '* A cabra mais acolhedora das Ruínas, com robe e Delta Rune.',
+        longDesc: '* Pelúcia da Toriel sentada: orelhas longas, robe roxo e o Delta Rune bordado no peito.\n* Macia o suficiente para um abraço depois de cair no Underground.\n* Minha criança, você quer um pouco de torta?',
+        price: 720,
+        boss: 'toriel',
+        images: productImages('toriel-plush', 1),
+        specs: {
+            'Origem': 'Ruínas',
+            'Material': 'Pelúcia',
+            'Personagem': 'Toriel',
+            'Pose': 'Sentada',
+            'Raridade': 'Rara'
+        }
+    },
+    {
+        id: 'temmie-plush',
+        name: 'Pelúcia Temmie',
+        desc: '* hOI!!!!! tem... pelúcia. na caixa. (paga a faculdade.)',
+        longDesc: '* Pelúcia da Temmie no suéter azul e amarelo, orelhas em dobro e a língua de fora.\n* Fotografada dentro de uma caixa de papelão — como convém à Temmie Village.\n* hOI! tem dinheiro da faculdade? (boa sorte.)',
+        price: 480,
+        boss: 'undyne',
+        images: productImages('temmie-plush', 1),
+        specs: {
+            'Origem': 'Waterfall',
+            'Material': 'Pelúcia',
+            'Personagem': 'Temmie',
+            'Roupa': 'Suéter listrado',
+            'Raridade': 'Incomum'
+        }
+    },
+    {
+        id: 'napsta-pillow',
+        name: 'Almofada Napstablook',
+        desc: '* oh... uma almofada fantasma... se quiser...',
+        longDesc: '* Almofada pelúcia do Napstablook: branca, alongada, com os olhos tristes e a boca em arco para baixo.\n* oh... você realmente quer isso na sua cama...? tudo bem... obrigado...\n* Combina com noites de Spooktune no volume baixo.',
+        price: 310,
+        boss: 'napstablook',
+        images: productImages('napsta-pillow', 1),
+        specs: {
+            'Origem': 'Ruínas',
+            'Tipo': 'Almofada pelúcia',
+            'Personagem': 'Napstablook',
+            'Formato': 'Fantasma',
+            'Raridade': 'Incomum'
+        }
+    },
+    {
+        id: 'papyrus-plate',
+        name: 'Prato Master Chef Papyrus',
+        desc: '* NYEH! Silken spaghetti, finely aged in an oaken cask...',
+        longDesc: '* Prato de cerâmica Master Chef Papyrus, com o grande esqueleto sobre uma montanha de espaguete.\n* Texto no bordo: "Silken spaghetti, finely aged in an oaken cask... Then cooked by me, Master Chef Papyrus!"\n* O Annoying Dog aparece escondido na borda. NYEH HEH HEH!',
+        price: 260,
+        boss: 'papyrus',
+        images: productImages('papyrus-plate', 1),
+        specs: {
+            'Origem': 'Snowdin',
+            'Material': 'Cerâmica',
+            'Tipo': 'Prato raso',
+            'Tema': 'Master Chef Papyrus',
+            'Raridade': 'Incomum'
+        }
+    },
+    {
+        id: 'lesser-dog',
+        name: 'Figura Lesser Dog',
+        desc: '* O pescoço cresce. A lealdade também. Armor inclusa.',
+        longDesc: '* Figura do Lesser Dog em armadura da Guarda Real, escudo e espada, no cenário nevado de Snowdin.\n* O pescoço alongado é o ponto do colecionável — quanto mais você acaricia, mais ele cresce.\n* (Você acariciou o Lesser Dog.)',
+        price: 640,
+        boss: 'papyrus',
+        images: productImages('lesser-dog', 1),
+        specs: {
+            'Origem': 'Snowdin',
+            'Material': 'PVC',
+            'Personagem': 'Lesser Dog',
+            'Acessórios': 'Escudo e espada',
+            'Raridade': 'Rara'
+        }
+    },
+    {
+        id: 'greater-dog',
+        name: 'Figura Greater Dog',
+        desc: '* Armadura, escudo Delta Rune e a língua para fora.',
+        longDesc: '* Figura do Greater Dog em armadura cinza, escudo com Delta Rune e espada erguida.\n* A língua de fora é obrigatória. A base preta também.\n* Um bom cão. Um ótimo cão. O Greater Dog.',
+        price: 680,
+        boss: 'papyrus',
+        images: productImages('greater-dog', 1),
+        specs: {
+            'Origem': 'Snowdin',
+            'Material': 'PVC',
+            'Personagem': 'Greater Dog',
+            'Acessórios': 'Escudo Delta Rune',
+            'Raridade': 'Rara'
+        }
+    },
+    {
+        id: 'undertale-tee',
+        name: 'Camiseta Elenco UNDERTALE',
+        desc: '* O elenco inteiro em uma estampa. Undyne segura a lança.',
+        longDesc: '* Camiseta com o retrato coletivo do Underground: Sans no trombone, Papyrus, Undyne com a lança, Alphys, Mettaton, Toriel, Frisk e o Annoying Dog.\n* Disponível no mockup unissex e no corte women\'s, ambas em vermelho.\n* Asgore observa do fundo. Como sempre.',
+        price: 320,
+        boss: 'undyne',
+        images: productImages('undertale-tee', 2),
+        specs: {
+            'Origem': 'Underground',
+            'Tipo': 'Camiseta',
+            'Cortes': 'Unissex / Women\'s',
+            'Estampa': 'Elenco completo',
+            'Raridade': 'Incomum'
+        }
+    },
+    {
+        id: 'annoying-dog-pillow',
+        name: 'Almofada Annoying Dog',
+        desc: '* O cão pixelado. Rouba a trilha sonora e o sofá.',
+        longDesc: '* Almofada em silhueta pixel do Annoying Dog, branca com contorno preto blocado.\n* Feita para o sofá — e para desaparecer com o cartucho quando você menos espera.\n* (O cão está carregando a trilha sonora.)',
+        price: 290,
+        boss: 'froggit',
+        images: productImages('annoying-dog-pillow', 1),
+        specs: {
+            'Origem': 'Snowdin',
+            'Tipo': 'Almofada pixel',
+            'Personagem': 'Annoying Dog',
+            'Estilo': 'Sprite 8-bit',
+            'Raridade': 'Incomum'
+        }
+    },
+    {
+        id: 'physical-edition',
+        name: 'UNDERTALE Edição Física',
+        desc: '* PC, PS4, Xbox One e Switch. O mesmo logo, quatro capas.',
+        longDesc: '* Edição física oficial do UNDERTALE nas quatro plataformas: PC, PlayStation 4, Xbox One e Nintendo Switch.\n* Capa preta com o logo pixelado e a silhueta da cidade no rodapé.\n* A versão PS4 inclui o livreto ilustrado. Sem conteúdo extra. (Essa é a piada.)',
+        price: 400,
+        boss: 'undyne',
+        images: productImages('physical-edition', 2),
+        specs: {
+            'Origem': 'Underground',
+            'Plataformas': 'PC / PS4 / Xbox / Switch',
+            'Tipo': 'Jogo físico',
+            'Capa': 'Logo + cityscape',
+            'Raridade': 'Rara'
+        }
+    },
+    {
+        id: 'embossed-mug',
+        name: 'Caneca Annoying Dog',
+        desc: '* Relevo branco: o cão no carrinho, patas e ossos.',
+        longDesc: '* Caneca de cerâmica branca com relevo do Annoying Dog no carrinho, pegadas e ossos ao redor.\n* O desenho só aparece na luz — como o cão, quando quer ser visto.\n* Lavável. O cão, infelizmente, não.',
+        price: 160,
+        boss: 'froggit',
+        images: productImages('embossed-mug', 1),
+        specs: {
+            'Origem': 'Snowdin',
+            'Material': 'Cerâmica',
+            'Tipo': 'Caneca em relevo',
+            'Tema': 'Annoying Dog',
+            'Raridade': 'Comum'
+        }
+    },
+    {
+        id: 'toriel-tee',
+        name: 'Camiseta Toriel',
+        desc: '* Toriel entre pétalas douradas, no canto da camiseta vermelha.',
+        longDesc: '* Camiseta vermelha com a Toriel em perfil, sobre um tapete de pétalas douradas no canto inferior.\n* Mockup unissex e women\'s. Discreta o suficiente para um passeio nas Ruínas.\n* Você quer mesmo ir embora, minha criança?',
+        price: 300,
+        boss: 'toriel',
+        images: productImages('toriel-tee', 1),
+        specs: {
+            'Origem': 'Ruínas',
+            'Tipo': 'Camiseta',
+            'Cortes': 'Unissex / Women\'s',
+            'Estampa': 'Toriel + pétalas',
+            'Raridade': 'Incomum'
         }
     }
 ];
@@ -258,6 +472,17 @@ function triggerGoldEasterEgg() {
 
 // ========== PRODUCTS ==========
 
+function productGallery(product) {
+    if (product.images && product.images.length > 0) return product.images;
+    if (product.sprite) return [product.sprite];
+    return [];
+}
+
+function productMainImage(product) {
+    const gallery = productGallery(product);
+    return gallery[0] || '';
+}
+
 function renderProducts() {
     const grid = document.getElementById('product-grid');
     grid.innerHTML = '';
@@ -268,9 +493,8 @@ function renderProducts() {
         card.onclick = () => openProduct(product.id);
         card.innerHTML = `
             <div class="product-image">
-                <img src="${product.sprite}"
+                <img src="${productMainImage(product)}"
                      alt="${product.name}"
-                     style="transform: scale(${product.scale})"
                      loading="lazy">
                 <span class="product-boss-tag">BOSS: ${product.boss.toUpperCase()}</span>
             </div>
@@ -301,15 +525,14 @@ function openProduct(productId) {
     detailQty = 1;
     renderProductDetail();
     showSection('product');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderProductDetail() {
     const p = currentProduct;
     if (!p) return;
 
-    const gallery = p.images.length > 0 ? p.images : [p.sprite];
-    const placeholders = Math.max(0, 4 - gallery.length);
+    const gallery = productGallery(p);
+    const placeholders = gallery.length > 0 ? 0 : 4;
 
     const thumbs = gallery.map((src, i) => `
         <div class="gallery-thumb ${i === 0 ? 'active' : ''}" onclick="setMainImage('${src}', this)">
@@ -331,9 +554,9 @@ function renderProductDetail() {
     document.getElementById('detail-layout').innerHTML = `
         <div class="detail-gallery">
             <div class="gallery-main" id="gallery-main">
-                <img src="${gallery[0]}" alt="${p.name}" style="transform: scale(${p.scale})">
+                <img src="${gallery[0]}" alt="${p.name}">
             </div>
-            <div class="gallery-thumbs">${thumbs}</div>
+            <div class="gallery-thumbs${gallery.length < 2 ? ' hidden' : ''}">${thumbs}</div>
         </div>
 
         <div class="detail-info">
@@ -481,7 +704,7 @@ function updateCartUI() {
             el.className = 'cart-item';
             el.innerHTML = `
                 <div class="cart-item-sprite">
-                    <img src="${product.sprite}" alt="${product.name}">
+                    <img src="${productMainImage(product)}" alt="${product.name}">
                 </div>
                 <div class="cart-item-info">
                     <div class="cart-item-name">${product.name}</div>
@@ -622,6 +845,8 @@ function showSection(section) {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === section);
     });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function toggleCart() {
