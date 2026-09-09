@@ -59,10 +59,51 @@
       'assets/sprites/attacks/gaster_4.png',
       'assets/sprites/attacks/gaster_5.png',
     ],
+    fight: {
+      target: 'assets/sprites/fight/target.png',
+      fadebar: {
+        cyan:   'assets/sprites/fight/fadebar_cyan.png',
+        red:    'assets/sprites/fight/fadebar_red.png',
+        yellow: 'assets/sprites/fight/fadebar_yellow.png',
+      },
+      dmgDigits: [
+        'assets/sprites/fight/dmg_0.png',
+        'assets/sprites/fight/dmg_1.png',
+        'assets/sprites/fight/dmg_2.png',
+        'assets/sprites/fight/dmg_3.png',
+        'assets/sprites/fight/dmg_4.png',
+        'assets/sprites/fight/dmg_5.png',
+        'assets/sprites/fight/dmg_6.png',
+        'assets/sprites/fight/dmg_7.png',
+        'assets/sprites/fight/dmg_8.png',
+        'assets/sprites/fight/dmg_9.png',
+      ],
+      dmgMiss: 'assets/sprites/fight/dmg_miss.png',
+      slash: {
+        glove: [
+          'assets/sprites/fight/slash_glove_0.png',
+          'assets/sprites/fight/slash_glove_1.png',
+          'assets/sprites/fight/slash_glove_2.png',
+          'assets/sprites/fight/slash_glove_3.png',
+          'assets/sprites/fight/slash_glove_4.png',
+          'assets/sprites/fight/slash_glove_5.png',
+        ],
+        shoe: [
+          'assets/sprites/fight/slash_shoe_0.png',
+          'assets/sprites/fight/slash_shoe_1.png',
+          'assets/sprites/fight/slash_shoe_2.png',
+          'assets/sprites/fight/slash_shoe_3.png',
+          'assets/sprites/fight/slash_shoe_4.png',
+          'assets/sprites/fight/slash_shoe_5.png',
+        ],
+      },
+    },
     ui: {
-      hp_name: 'assets/sprites/ui/hp_name.png',
-      border:  'assets/sprites/ui/border.png',
-      target:  'assets/sprites/ui/target.png',
+      hp_name:      'assets/sprites/ui/hp_name.png',
+      border:       'assets/sprites/ui/border.png',
+      target:       'assets/sprites/ui/target.png',
+      bubbleLeft:   'assets/sprites/ui/bubble_tail_left.png',
+      bubbleRight:  'assets/sprites/ui/bubble_tail_right.png',
     },
   };
 
@@ -70,7 +111,7 @@
   const BOSSES = {
     froggit: {
       name: 'Froggit',
-      hp: 30, maxHp: 30, atk: 4, def: 2,
+      hp: 30, maxHp: 30, atk: 2, def: 2,
       spriteKeys: ['froggit'],
       spriteScale: 2,
       dialogue: [
@@ -83,7 +124,7 @@
     },
     napstablook: {
       name: 'Napstablook',
-      hp: 44, maxHp: 44, atk: 5, def: 2,
+      hp: 44, maxHp: 44, atk: 3, def: 2,
       spriteKeys: ['napstablook'],
       spriteScale: 2.5,
       dialogue: [
@@ -96,7 +137,7 @@
     },
     toriel: {
       name: 'Toriel',
-      hp: 80, maxHp: 80, atk: 8, def: 3,
+      hp: 80, maxHp: 80, atk: 4, def: 3,
       spriteKeys: ['toriel'],
       spriteScale: 2,
       dialogue: [
@@ -109,7 +150,7 @@
     },
     papyrus: {
       name: 'Papyrus',
-      hp: 60, maxHp: 60, atk: 8, def: 3,
+      hp: 60, maxHp: 60, atk: 4, def: 3,
       spriteKeys: ['papyrus'],
       spriteScale: 1.2,
       dialogue: [
@@ -122,7 +163,7 @@
     },
     undyne: {
       name: 'Undyne',
-      hp: 70, maxHp: 70, atk: 10, def: 4,
+      hp: 70, maxHp: 70, atk: 5, def: 4,
       spriteKeys: ['undyne'],
       spriteScale: 1,
       dialogue: [
@@ -135,7 +176,7 @@
     },
     sans: {
       name: 'Sans',
-      hp: 1, maxHp: 1, atk: 25, def: 1,
+      hp: 1, maxHp: 1, atk: 7, def: 1,
       spriteKeys: ['sans'],
       spriteScale: 2,
       dialogue: [
@@ -148,7 +189,7 @@
     },
     flowey: {
       name: 'Flowey',
-      hp: 50, maxHp: 50, atk: 7, def: 2,
+      hp: 50, maxHp: 50, atk: 4, def: 2,
       spriteKeys: ['flowey'],
       spriteScale: 4,
       dialogue: [
@@ -161,7 +202,7 @@
     },
     mettaton: {
       name: 'Mettaton EX',
-      hp: 90, maxHp: 90, atk: 9, def: 5,
+      hp: 90, maxHp: 90, atk: 5, def: 5,
       spriteKeys: ['mettaton'],
       spriteScale: 2.8,
       dialogue: [
@@ -199,8 +240,10 @@
   const BOX_Y = 250;
 
   // Faixa vertical reservada ao monstro — nunca invade a caixa de batalha.
+  // A folga até a caixa precisa comportar a barra de HP do inimigo, que é
+  // desenhada logo abaixo do sprite.
   const BOSS_AREA_TOP = 18;
-  const BOSS_AREA_BOTTOM = BOX_Y - 22;
+  const BOSS_AREA_BOTTOM = BOX_Y - 44;
 
   // Botões FIGHT/ACT/ITEM/MERCY: 110x42 (tamanho nativo dos sprites).
   const MENU_BTN_W = 110;
@@ -209,6 +252,9 @@
   const MENU_Y = BOX_Y + BOX_H + 42;
   const HUD_Y = BOX_Y + BOX_H + 22;
 
+  // Quem está lutando é o comprador, não a Chara do jogo original.
+  const PLAYER_NAME = 'COMPRADOR';
+
   const SOUL_SCALE = 1;
   const SOUL_SIZE = 16 * SOUL_SCALE;
   const SOUL_SPEED = 2.2;
@@ -216,7 +262,57 @@
   const INVINCIBILITY_MS = 1000;
 
   // Velocidade da barra de ataque (% da barra por frame a 60fps).
+  // 100 / 1.6 ≈ 62 frames ≈ 1,05s de varredura — não alterar.
   const FIGHT_BAR_SPEED = 1.6;
+
+  // Sequência do FIGHT (ms).
+  const FIGHT_FREEZE_MS = 340;   // cursor parado, visível, antes do golpe
+  const SLASH_FRAME_MS = 66;     // ~1/15s por quadro
+  const FIGHT_RESULT_MS = 900;
+  const CRIT_ACCURACY = 0.9;
+  const CRIT_MULTIPLIER = 2.2;
+
+  // Tela de morte: coração inteiro → rachado → estilhaçado → aviso.
+  // A carência depois do aviso existe para um Z martelado durante a morte
+  // não escolher sozinho.
+  const LOSE_CRACK_MS = 550;
+  const LOSE_SHATTER_MS = 1000;
+  const LOSE_PROMPT_MS = 1900;
+  const LOSE_INPUT_GRACE_MS = 700;
+
+  // A caixa muda de tamanho conforme o ataque, como no jogo.
+  const BOX_RESIZE_MS = 260;
+
+  // Barra de HP do inimigo.
+  const ENEMY_HP_W = 110;
+  const ENEMY_HP_H = 14;
+  const ENEMY_HP_DRAIN_MS = 500;
+  const ENEMY_HP_HOLD_MS = 1500;
+  const ENEMY_HP_FADE_MS = 250;
+
+  // spr_dmgnum tem 30x30 com ~3px de folga; 26 encosta os dígitos.
+  const DMG_DIGIT_ADVANCE = 26;
+
+  // Golpe de cada monstro — fixo para não trocar entre turnos.
+  const SLASH_BY_BOSS = {
+    froggit: 'glove',
+    napstablook: 'shoe',
+    toriel: 'shoe',
+    papyrus: 'glove',
+    undyne: 'glove',
+    sans: 'glove',
+    flowey: 'shoe',
+    mettaton: 'shoe',
+  };
+
+  // 9-slice dos balões: os insets mantêm bico e cantos fora das faixas
+  // esticadas. Tamanho mínimo resultante ≈ 72x70.
+  const BUBBLE_INSETS = {
+    left:  { left: 48, right: 24, top: 46, bottom: 24 },
+    right: { left: 24, right: 48, top: 46, bottom: 24 },
+  };
+  const BUBBLE_TAIL_GUTTER = 25;  // faixa do bico, transparente no corpo
+  const BUBBLE_TAIL_Y = 35;       // centro do bico medido do topo do sprite
 
   // ── Preloader ─────────────────────────────────────────────
   function collectAllPaths() {
@@ -230,6 +326,13 @@
     for (const p of Object.values(SPRITE.attacks))
       paths.add(p);
     SPRITE.gaster.forEach(p => paths.add(p));
+    paths.add(SPRITE.fight.target);
+    paths.add(SPRITE.fight.dmgMiss);
+    for (const p of Object.values(SPRITE.fight.fadebar))
+      paths.add(p);
+    SPRITE.fight.dmgDigits.forEach(p => paths.add(p));
+    for (const arr of Object.values(SPRITE.fight.slash))
+      arr.forEach(p => paths.add(p));
     for (const p of Object.values(SPRITE.ui))
       paths.add(p);
     return paths;
@@ -274,6 +377,37 @@
     }
     if (line) lines.push(line);
     return lines;
+  }
+
+  // ── 9-slice ───────────────────────────────────────────────
+  // Cantos em tamanho nativo; só as faixas central/laterais esticam.
+  function drawNineSlice(ctx, img, dx, dy, dw, dh, insets) {
+    const l = insets.left, r = insets.right, t = insets.top, b = insets.bottom;
+    const sw = img.width, sh = img.height;
+    const srcMidW = sw - l - r;
+    const srcMidH = sh - t - b;
+    const dstMidW = Math.max(0, dw - l - r);
+    const dstMidH = Math.max(0, dh - t - b);
+
+    const part = (sx, sy, spw, sph, px, py, pw, ph) => {
+      if (spw <= 0 || sph <= 0 || pw <= 0 || ph <= 0) return;
+      ctx.drawImage(img, sx, sy, spw, sph, px, py, pw, ph);
+    };
+
+    const midX = dx + l, rightX = dx + l + dstMidW;
+    const midY = dy + t, bottomY = dy + t + dstMidH;
+
+    part(0,      0,      l,       t,       dx,     dy,      l,       t);
+    part(l,      0,      srcMidW, t,       midX,   dy,      dstMidW, t);
+    part(sw - r, 0,      r,       t,       rightX, dy,      r,       t);
+
+    part(0,      t,      l,       srcMidH, dx,     midY,    l,       dstMidH);
+    part(l,      t,      srcMidW, srcMidH, midX,   midY,    dstMidW, dstMidH);
+    part(sw - r, t,      r,       srcMidH, rightX, midY,    r,       dstMidH);
+
+    part(0,      sh - b, l,       b,       dx,     bottomY, l,       b);
+    part(l,      sh - b, srcMidW, b,       midX,   bottomY, dstMidW, b);
+    part(sw - r, sh - b, r,       b,       rightX, bottomY, r,       b);
   }
 
   // ── Soul ──────────────────────────────────────────────────
@@ -417,6 +551,9 @@
       this.gravity = 0;
       this.wobble = null;
       this.frames = null;
+      this.path = null;
+      this.spin = 0;
+      this.lifetime = 0;
     }
 
     // Animação por quadros (moscas, chamas, blasters, bombas...).
@@ -435,6 +572,25 @@
       return this;
     }
 
+    // Trajetória própria, aplicada depois da física: ziguezague, espiral,
+    // perseguição, ricochete. Recebe (projétil, idade em ms).
+    setPath(fn) {
+      this.path = fn;
+      return this;
+    }
+
+    // Giro contínuo do sprite, em radianos por ms.
+    setSpin(radPerMs) {
+      this.spin = radPerMs;
+      return this;
+    }
+
+    // Some sozinho depois de um tempo, para ataques que ficam presos na caixa.
+    setLifetime(ms) {
+      this.lifetime = ms;
+      return this;
+    }
+
     update(dt) {
       const t = dt / 16.67;
       this.vy += this.gravity * t;
@@ -446,6 +602,10 @@
         this.wobble.baseX += this.vx * t;
         this.x = this.wobble.baseX + Math.sin(this.age * this.wobble.freq) * this.wobble.amp;
       }
+
+      if (this.spin) this.angle += this.spin * dt;
+      if (this.path) this.path(this, this.age);
+      if (this.lifetime && this.age > this.lifetime) this.alive = false;
 
       if (this.frames) {
         this._frameTimer += dt;
@@ -480,6 +640,70 @@
     }
   }
 
+  // ── Estilhaços da alma ────────────────────────────────────
+  // O coração racha e depois se parte em muitos cacos. Como não existe
+  // sprite de caco, cada pedaço é um recorte do próprio heart_break em
+  // grade, arremessado para fora com gravidade e giro.
+  const SHARD_COLS = 5;
+  const SHARD_ROWS = 4;
+  const SHARD_SCALE = 3;
+  const SHARD_GRAVITY = 0.0011;   // px/ms²
+
+  class SoulShard {
+    constructor(sx, sy, sw, sh, x, y, vx, vy, spin) {
+      this.sx = sx; this.sy = sy; this.sw = sw; this.sh = sh;
+      this.x = x; this.y = y;
+      this.vx = vx; this.vy = vy;
+      this.angle = 0; this.spin = spin;
+    }
+
+    update(dt) {
+      this.vy += SHARD_GRAVITY * dt;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.angle += this.spin * dt;
+    }
+
+    render(ctx, img) {
+      const w = this.sw * SHARD_SCALE;
+      const h = this.sh * SHARD_SCALE;
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.drawImage(img, this.sx, this.sy, this.sw, this.sh, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+  }
+
+  // Recorta o sprite em grade e joga cada caco para longe do centro.
+  function makeSoulShards(img, cx, cy) {
+    const cellW = img.width / SHARD_COLS;
+    const cellH = img.height / SHARD_ROWS;
+    const shards = [];
+
+    for (let row = 0; row < SHARD_ROWS; row++) {
+      for (let col = 0; col < SHARD_COLS; col++) {
+        // Posição do caco na tela, mantendo o desenho do coração no instante
+        // em que ele se parte.
+        const px = cx + (col - (SHARD_COLS - 1) / 2) * cellW * SHARD_SCALE;
+        const py = cy + (row - (SHARD_ROWS - 1) / 2) * cellH * SHARD_SCALE;
+
+        const dx = px - cx;
+        const dy = py - cy;
+        const dist = Math.max(1, Math.hypot(dx, dy));
+
+        shards.push(new SoulShard(
+          col * cellW, row * cellH, cellW, cellH,
+          px, py,
+          (dx / dist) * rand(0.10, 0.26) + rand(-0.05, 0.05),
+          (dy / dist) * rand(0.08, 0.20) - rand(0.10, 0.28),
+          rand(-0.008, 0.008)
+        ));
+      }
+    }
+    return shards;
+  }
+
   // ── AABB collision ────────────────────────────────────────
   function aabb(a, b) {
     return a.x < b.x + b.w && a.x + a.w > b.x &&
@@ -489,7 +713,8 @@
   // ── Attack patterns ───────────────────────────────────────
   // Cada monstro tem vários padrões; o engine sorteia um por turno e
   // nunca repete o mesmo duas vezes seguidas (ver _pickAttackPattern).
-  // spawn(t, dt, box) devolve os projéteis criados neste frame.
+  // spawn(t, dt, box, soul) devolve os projéteis criados neste frame;
+  // `soul` permite ataques mirados no jogador.
 
   // Dispara uma vez a cada `ms`, independente da variação do dt.
   function beat(t, dt, ms) {
@@ -501,7 +726,26 @@
   const ATTACK_PATTERNS = {
     froggit: [
       {
+        // Moscas atravessam a caixa subindo e descendo em onda.
+        id: 'flyzigzag',
+        box: [380, 130],
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 560)) return [];
+          const fromLeft = Math.random() > 0.5;
+          const baseY = rand(box.y + 24, box.y + box.h - 40);
+          const amp = rand(16, 30);
+          const p = new Projectile(
+            fromLeft ? box.x - 24 : box.x + box.w + 24, baseY,
+            fromLeft ? 1.8 : -1.8, 0, 16, 16, SPRITE.attacks.fly_0
+          );
+          p.setFrames([SPRITE.attacks.fly_0, SPRITE.attacks.fly_1], 120);
+          p.setPath((s, age) => { s.y = baseY + Math.sin(age * 0.006) * amp; });
+          return [p];
+        },
+      },
+      {
         id: 'flies',
+        box: [300, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 420)) return [];
           const p = new Projectile(
@@ -515,6 +759,7 @@
       },
       {
         id: 'hop',
+        box: [340, 130],
         spawn(t, dt, box) {
           if (!beat(t, dt, 900)) return [];
           const fromLeft = Math.random() > 0.5;
@@ -530,6 +775,7 @@
       },
       {
         id: 'swarm',
+        box: [430, 110],
         spawn(t, dt, box) {
           if (!beat(t, dt, 340)) return [];
           const fromLeft = Math.random() > 0.5;
@@ -547,7 +793,26 @@
 
     napstablook: [
       {
+        // Lágrimas caem escorregando na direção do jogador: dá para desviar,
+        // mas não adianta ficar parado.
+        id: 'tearchase',
+        box: [320, 140],
+        spawn(t, dt, box, soul) {
+          if (!beat(t, dt, 300)) return [];
+          const p = new Projectile(
+            rand(box.x + 10, box.x + box.w - 26), box.y - 18,
+            0, 2.0, 16, 18, SPRITE.attacks.teardrop
+          );
+          p.setPath((s) => {
+            const target = soul.x + soul.w / 2 - s.w / 2;
+            s.x += Math.max(-0.9, Math.min(0.9, (target - s.x) * 0.02));
+          });
+          return [p];
+        },
+      },
+      {
         id: 'tears',
+        box: [280, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 300)) return [];
           const cols = 5;
@@ -561,6 +826,7 @@
       },
       {
         id: 'tearwall',
+        box: [430, 130],
         spawn(t, dt, box) {
           // Parede de lágrimas com uma única brecha para escapar.
           if (!beat(t, dt, 1400)) return [];
@@ -580,6 +846,7 @@
       },
       {
         id: 'tearrain',
+        box: [340, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 220)) return [];
           const fromLeft = Math.random() > 0.5;
@@ -593,7 +860,36 @@
 
     toriel: [
       {
+        // Espiral de chamas: o raio cresce enquanto o anel gira.
+        id: 'firespiral',
+        box: [300, 140],
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 1400)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const dir = Math.random() > 0.5 ? 1 : -1;
+          const offset = Math.random() * Math.PI * 2;
+          const count = 8;
+          const projs = [];
+          for (let i = 0; i < count; i++) {
+            const a0 = offset + (i / count) * Math.PI * 2;
+            const p = new Projectile(cx, cy, 0, 0, 24, 24, SPRITE.attacks.fire_0);
+            p.setFrames([SPRITE.attacks.fire_0, SPRITE.attacks.fire_1], 110);
+            p.setPath((s, age) => {
+              const a = a0 + dir * age * 0.0016;
+              const r = 16 + age * 0.10;
+              s.x = cx + Math.cos(a) * r - s.w / 2;
+              s.y = cy + Math.sin(a) * r - s.h / 2;
+            });
+            p.setLifetime(4200);
+            projs.push(p);
+          }
+          return projs;
+        },
+      },
+      {
         id: 'firewave',
+        box: [440, 110],
         spawn(t, dt, box) {
           if (!beat(t, dt, 480)) return [];
           const fromLeft = Math.random() > 0.5;
@@ -609,6 +905,7 @@
       },
       {
         id: 'pillars',
+        box: [360, 140],
         spawn(t, dt, box) {
           // Colunas de chamas subindo do chão da caixa.
           if (!beat(t, dt, 700)) return [];
@@ -626,6 +923,7 @@
       },
       {
         id: 'firering',
+        box: [280, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 1100)) return [];
           const cx = box.x + box.w / 2;
@@ -651,7 +949,26 @@
 
     papyrus: [
       {
+        // Escadinha de ossos: as alturas sobem e descem em sequência e a
+        // escada troca de chão para teto, então o jogador acompanha um ritmo
+        // em vez de reagir a cada osso solto.
+        id: 'bonestair',
+        box: [460, 130],
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 240)) return [];
+          const step = Math.floor(t / 240) % 20;
+          const fromCeiling = step >= 10;
+          const h = 20 + Math.abs(4.5 - (step % 10)) * 9;
+          return [new Projectile(
+            box.x + box.w + 20,
+            fromCeiling ? box.y : box.y + box.h - h,
+            -3.2, 0, 10, h, SPRITE.attacks.bone_v
+          )];
+        },
+      },
+      {
         id: 'bonesides',
+        box: [480, 100],
         spawn(t, dt, box) {
           if (!beat(t, dt, 420)) return [];
           const fromLeft = Math.random() > 0.5;
@@ -665,6 +982,7 @@
       },
       {
         id: 'bonejump',
+        box: [440, 120],
         spawn(t, dt, box) {
           // Ossos subindo do chão: o clássico "pule!" do Papyrus.
           if (!beat(t, dt, 620)) return [];
@@ -677,6 +995,7 @@
       },
       {
         id: 'bonegate',
+        box: [420, 140],
         spawn(t, dt, box) {
           // Par de ossos (topo + base) deixando uma passagem no meio.
           if (!beat(t, dt, 800)) return [];
@@ -697,7 +1016,32 @@
 
     undyne: [
       {
+        // Lanças miram onde o jogador estava no instante do disparo.
+        id: 'spearaim',
+        box: [300, 140],
+        spawn(t, dt, box, soul) {
+          if (!beat(t, dt, 620)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const a0 = Math.random() * Math.PI * 2;
+          const dist = Math.max(box.w, box.h);
+          const sx = cx + Math.cos(a0) * dist;
+          const sy = cy + Math.sin(a0) * dist;
+          const tx = soul.x + soul.w / 2;
+          const ty = soul.y + soul.h / 2;
+          const d = Math.max(1, Math.hypot(tx - sx, ty - sy));
+          const spd = 3.0;
+          const p = new Projectile(
+            sx, sy, ((tx - sx) / d) * spd, ((ty - sy) / d) * spd,
+            12, 34, SPRITE.attacks.spear
+          );
+          p.angle = Math.atan2(ty - sy, tx - sx) + Math.PI / 2;
+          return [p];
+        },
+      },
+      {
         id: 'spearcross',
+        box: [260, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 300)) return [];
           const cx = box.x + box.w / 2;
@@ -718,6 +1062,7 @@
       },
       {
         id: 'spearrain',
+        box: [420, 130],
         spawn(t, dt, box) {
           if (!beat(t, dt, 260)) return [];
           const p = new Projectile(
@@ -730,6 +1075,7 @@
       },
       {
         id: 'spearburst',
+        box: [260, 140],
         spawn(t, dt, box) {
           // Rajada radial de lanças brancas.
           if (!beat(t, dt, 1300)) return [];
@@ -755,7 +1101,24 @@
 
     sans: [
       {
+        // Ossos rápidos que trocam de altura no meio do caminho.
+        id: 'bonezig',
+        box: [420, 140],
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 280)) return [];
+          const fromLeft = Math.random() > 0.5;
+          const baseY = rand(box.y + 20, box.y + box.h - 34);
+          const p = new Projectile(
+            fromLeft ? box.x - 60 : box.x + box.w + 60, baseY,
+            fromLeft ? 4.2 : -4.2, 0, 50, 10, SPRITE.attacks.bone_h
+          );
+          p.setPath((s, age) => { s.y = baseY + Math.sin(age * 0.009) * 32; });
+          return [p];
+        },
+      },
+      {
         id: 'bonebarrage',
+        box: [300, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 220)) return [];
           const cx = box.x + box.w / 2;
@@ -777,6 +1140,7 @@
       },
       {
         id: 'blasters',
+        box: [420, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 1200)) return [];
           const p = new Projectile(
@@ -789,6 +1153,7 @@
       },
       {
         id: 'bonewall',
+        box: [400, 140],
         spawn(t, dt, box) {
           // Paredes alternadas em cima e embaixo — força movimento vertical.
           if (!beat(t, dt, 700)) return [];
@@ -805,7 +1170,27 @@
 
     flowey: [
       {
+        // Espiral de "amizade": os pellets saem do centro girando devagar.
+        id: 'pelletspiral',
+        box: [300, 140],
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 95)) return [];
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const a = (t / 95) * 0.55;
+          const spd = 1.9;
+          const p = new Projectile(
+            cx - 8, cy - 8,
+            Math.cos(a) * spd, Math.sin(a) * spd,
+            16, 16, SPRITE.attacks.bullet_0
+          );
+          p.setFrames([SPRITE.attacks.bullet_0, SPRITE.attacks.bullet_1], 100);
+          return [p];
+        },
+      },
+      {
         id: 'pelletring',
+        box: [280, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 260)) return [];
           const cx = box.x + box.w / 2;
@@ -823,6 +1208,7 @@
       },
       {
         id: 'pelletwave',
+        box: [440, 120],
         spawn(t, dt, box) {
           if (!beat(t, dt, 340)) return [];
           const p = new Projectile(
@@ -835,6 +1221,7 @@
       },
       {
         id: 'pelletrain',
+        box: [360, 140],
         spawn(t, dt, box) {
           if (!beat(t, dt, 500)) return [];
           const projs = [];
@@ -851,7 +1238,40 @@
 
     mettaton: [
       {
+        // Bombas de palco ricocheteando nas paredes da caixa.
+        id: 'discobounce',
+        box: [420, 140],
+        spawn(t, dt, box) {
+          if (!beat(t, dt, 900)) return [];
+          const p = new Projectile(
+            rand(box.x + 40, box.x + box.w - 64),
+            rand(box.y + 24, box.y + box.h - 48),
+            rand(1.4, 2.2) * (Math.random() > 0.5 ? 1 : -1),
+            rand(1.2, 2.0) * (Math.random() > 0.5 ? 1 : -1),
+            24, 24, SPRITE.attacks.bomb_0
+          );
+          p.setFrames(
+            [SPRITE.attacks.bomb_0, SPRITE.attacks.bomb_1, SPRITE.attacks.bomb_2], 120
+          );
+          p.setSpin(0.004);
+          p.setPath((s) => {
+            const l = box.x + BOX_BORDER;
+            const r = box.x + box.w - BOX_BORDER - s.w;
+            const tp = box.y + BOX_BORDER;
+            const bt = box.y + box.h - BOX_BORDER - s.h;
+            if (s.x < l)  { s.x = l;  s.vx = Math.abs(s.vx); }
+            if (s.x > r)  { s.x = r;  s.vx = -Math.abs(s.vx); }
+            if (s.y < tp) { s.y = tp; s.vy = Math.abs(s.vy); }
+            if (s.y > bt) { s.y = bt; s.vy = -Math.abs(s.vy); }
+          });
+          // Nunca sai da caixa, então precisa de prazo de validade.
+          p.setLifetime(5200);
+          return [p];
+        },
+      },
+      {
         id: 'bombs',
+        box: [420, 130],
         spawn(t, dt, box) {
           if (!beat(t, dt, 360)) return [];
           const p = new Projectile(
@@ -864,6 +1284,7 @@
       },
       {
         id: 'legs',
+        box: [480, 100],
         spawn(t, dt, box) {
           if (!beat(t, dt, 320)) return [];
           const fromLeft = Math.random() > 0.5;
@@ -879,6 +1300,7 @@
       },
       {
         id: 'showtime',
+        box: [400, 140],
         spawn(t, dt, box) {
           const projs = [];
           if (beat(t, dt, 500)) {
@@ -955,30 +1377,52 @@
     }
   }
 
-  // ── Floating damage number ────────────────────────────────
-  class FloatingText {
-    constructor(text, x, y, color) {
-      this.text = text;
-      this.x = x;
-      this.y = y;
-      this.color = color || '#fff';
-      this.life = 1200;
+  // ── Número de dano (spr_dmgnum) ───────────────────────────
+  // Dígitos compostos a partir de dmg_0..9; `value` null = MISS.
+  class DamageNumber {
+    constructor(value, centerX, centerY, big) {
+      this.digits = value === null ? null : String(value).split('');
+      this.centerX = centerX;
+      this.centerY = centerY;
+      this.scale = big ? 1.35 : 1;
+      this.life = 1300;
       this.age = 0;
     }
 
-    update(dt) {
-      this.age += dt;
-      this.y -= 0.8;
-    }
+    update(dt) { this.age += dt; }
 
     get alive() { return this.age < this.life; }
 
-    render(ctx) {
-      const alpha = Math.max(0, 1 - this.age / this.life);
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = this.color;
-      ctx.font = '24px "Press Start 2P", monospace';
-      ctx.fillText(this.text, this.x, this.y);
+    render(ctx, sprites) {
+      // Sobe alguns pixels no início e depois só desvanece.
+      const y = this.centerY - Math.min(1, this.age / 300) * 16;
+      const k = this.age / this.life;
+      ctx.globalAlpha = k < 0.65 ? 1 : Math.max(0, 1 - (k - 0.65) / 0.35);
+
+      if (!this.digits) {
+        const img = sprites[SPRITE.fight.dmgMiss];
+        if (img) {
+          const w = img.width * this.scale;
+          const h = img.height * this.scale;
+          ctx.drawImage(img, this.centerX - w / 2, y - h / 2, w, h);
+        }
+      } else {
+        const adv = DMG_DIGIT_ADVANCE * this.scale;
+        const first = sprites[SPRITE.fight.dmgDigits[0]];
+        const glyphW = (first ? first.width : 30) * this.scale;
+        const totalW = adv * (this.digits.length - 1) + glyphW;
+        let x = this.centerX - totalW / 2;
+        for (const d of this.digits) {
+          const img = sprites[SPRITE.fight.dmgDigits[Number(d)]];
+          if (img) {
+            const w = img.width * this.scale;
+            const h = img.height * this.scale;
+            ctx.drawImage(img, x, y - h / 2, w, h);
+          }
+          x += adv;
+        }
+      }
+
       ctx.globalAlpha = 1;
     }
   }
@@ -1019,7 +1463,7 @@
 
       this.battleBox = { x: BOX_X, y: BOX_Y, w: BOX_W, h: BOX_H };
       this.projectiles = [];
-      this.floatingTexts = [];
+      this.damageNumbers = [];
       this.typewriter = new Typewriter();
       this.sprites = {};
       this.running = false;
@@ -1033,7 +1477,9 @@
       this.subMenuIndex = 0;
       this.subMenuItems = [];
 
-      this.fightBar = { active: false, pos: 0, speed: FIGHT_BAR_SPEED, stopped: false };
+      this.fightBar = this._newFightBar();
+      this.slashKind = SLASH_BY_BOSS[this.boss.attackType] || 'glove';
+      this.enemyHpBar = { visible: false, timer: 0, from: 1, to: 1, display: 1 };
       this.enemyTurnTimer = 0;
       this.enemyTurnDuration = 0;
       this.attackPattern = null;
@@ -1047,6 +1493,9 @@
       this.loseTimer = 0;
       this.losePhase = 0;
       this.retryAvailable = false;
+      this.finished = false;
+      this.boxAnim = null;
+      this.soulShards = null;
 
       this._boundKeyDown = this._onKeyDown.bind(this);
       this._boundKeyUp = this._onKeyUp.bind(this);
@@ -1105,6 +1554,19 @@
       this.setState(STATE.MESSAGE);
     }
 
+    // Fases: idle → sweep → freeze → slash → result.
+    _newFightBar() {
+      return {
+        phase: 'idle',
+        pos: 0,
+        speed: FIGHT_BAR_SPEED,
+        timer: 0,
+        accuracy: 0,
+        crit: false,
+        miss: false,
+      };
+    }
+
     // Sorteia um padrão diferente do usado no turno anterior.
     _pickAttackPattern() {
       const all = ATTACK_PATTERNS[this.boss.attackType] || [];
@@ -1119,6 +1581,8 @@
 
     setState(newState) {
       this.state = newState;
+      // Fora do turno inimigo a caixa sempre volta ao tamanho cheio.
+      if (newState !== STATE.ENEMY_TURN) this._setBoxSize(BOX_W, BOX_H);
       switch (newState) {
         case STATE.INTRO:
           this.introStep = 0;
@@ -1130,7 +1594,8 @@
           this.menuIndex = 0;
           break;
         case STATE.FIGHT_ANIM:
-          this.fightBar = { active: true, pos: 0, speed: FIGHT_BAR_SPEED, stopped: false };
+          this.fightBar = this._newFightBar();
+          this.fightBar.phase = 'sweep';
           break;
         case STATE.ACT_SELECT:
           this.subMenuIndex = 0;
@@ -1142,14 +1607,17 @@
             ? this.cartItems.map(it => `${it.name} (+${it.heal}HP)`)
             : ['(Sem itens)'];
           break;
-        case STATE.ENEMY_TURN:
+        case STATE.ENEMY_TURN: {
           this.enemyTurnTimer = 0;
           this.enemyTurnDuration = 5000 + Math.random() * 3000;
           this.projectiles = [];
           this.attackPattern = this._pickAttackPattern();
           this.speechActive = false;
+          const size = this.attackPattern && this.attackPattern.box;
+          this._setBoxSize(size ? size[0] : BOX_W, size ? size[1] : BOX_H);
           this._placeSoulForTurn();
           break;
+        }
         case STATE.WIN:
           this.winTimer = 0;
           this._say('* VOCÊ VENCEU!', false);
@@ -1158,8 +1626,37 @@
           this.loseTimer = 0;
           this.losePhase = 0;
           this.retryAvailable = false;
+          this.soulShards = null;
+          // Morrer no meio do turno deixava o ataque pendurado no estado.
+          this.projectiles = [];
           break;
       }
+    }
+
+    // A caixa cresce/encolhe em torno do próprio centro, como no jogo.
+    _setBoxSize(w, h) {
+      const toW = Math.min(BOX_W, w);
+      const toH = Math.min(BOX_H, h);
+      const b = this.battleBox;
+      if (Math.abs(b.w - toW) < 0.5 && Math.abs(b.h - toH) < 0.5) {
+        this.boxAnim = null;
+        return;
+      }
+      this.boxAnim = { fromW: b.w, fromH: b.h, toW, toH, timer: 0 };
+    }
+
+    _updateBox(dt) {
+      const a = this.boxAnim;
+      if (!a) return;
+      a.timer += dt;
+      const k = Math.min(1, a.timer / BOX_RESIZE_MS);
+      const ease = 1 - Math.pow(1 - k, 3);
+      const b = this.battleBox;
+      b.w = a.fromW + (a.toW - a.fromW) * ease;
+      b.h = a.fromH + (a.toH - a.fromH) * ease;
+      b.x = BOX_X + BOX_W / 2 - b.w / 2;
+      b.y = BOX_Y + BOX_H / 2 - b.h / 2;
+      if (k >= 1) this.boxAnim = null;
     }
 
     // No primeiro turno a alma entra voando do menu; depois só reposiciona.
@@ -1193,7 +1690,9 @@
     // ── UPDATE ────────────────────────────────────────────────
     update(dt) {
       this.typewriter.update(dt);
-      this.floatingTexts = this.floatingTexts.filter(f => { f.update(dt); return f.alive; });
+      this._updateBox(dt);
+      this.damageNumbers = this.damageNumbers.filter(d => { d.update(dt); return d.alive; });
+      this._updateEnemyHpBar(dt);
 
       if (this.boss.shakeTimer > 0) this.boss.shakeTimer -= dt;
 
@@ -1231,24 +1730,7 @@
           break;
 
         case STATE.FIGHT_ANIM:
-          if (!this.fightBar.stopped) {
-            this.fightBar.pos += this.fightBar.speed * (dt / 16.67);
-            if (this.fightBar.pos >= 100) {
-              this.fightBar.pos = 100;
-              this.fightBar.stopped = true;
-              this._applyFightDamage();
-            }
-            if (this._pressed('confirm')) {
-              this.fightBar.stopped = true;
-              this._applyFightDamage();
-            }
-          } else if (this.fightBar._resultTimer !== undefined) {
-            this.fightBar._resultTimer -= dt;
-            if (this.fightBar._resultTimer <= 0) {
-              if (this.boss.currentHp <= 0) this.setState(STATE.WIN);
-              else this.setState(STATE.ENEMY_TURN);
-            }
-          }
+          this._updateFightSequence(dt);
           break;
 
         case STATE.ACT_SELECT:
@@ -1318,7 +1800,7 @@
 
           if (this.attackPattern && !this.soul.entering) {
             this.projectiles.push(
-              ...this.attackPattern.spawn(this.enemyTurnTimer, dt, this.battleBox)
+              ...this.attackPattern.spawn(this.enemyTurnTimer, dt, this.battleBox, this.soul)
             );
           }
 
@@ -1346,50 +1828,160 @@
 
         case STATE.WIN:
           this.winTimer += dt;
-          if (this.winTimer > 3000) {
-            this.destroy();
-            this._removeOverlay();
-            this.onWin();
-          }
+          if (this.winTimer > 3000) this._finish(this.onWin);
           break;
 
         case STATE.LOSE:
           this.loseTimer += dt;
-          if (this.losePhase === 0 && this.loseTimer > 1500) {
+
+          if (!this.soulShards && this.loseTimer >= LOSE_SHATTER_MS) {
+            const img = this.sprites[SPRITE.soulBreak];
+            if (img) this.soulShards = makeSoulShards(img, CANVAS_W / 2, CANVAS_H / 2 - 40);
+          }
+          if (this.soulShards) for (const s of this.soulShards) s.update(dt);
+
+          if (this.losePhase === 0 && this.loseTimer > LOSE_PROMPT_MS) {
             this.losePhase = 1;
             this.retryAvailable = true;
+            // Quem acabou de morrer costuma estar martelando Z. Sem descartar
+            // o buffer, esse Z era consumido no mesmo quadro em que o aviso
+            // aparecia e o combate reiniciava sem o jogador escolher nada.
+            this.justPressed = {};
+            break;
           }
-          if (this.losePhase === 1 && this._pressed('confirm')) {
+          // Só aceita a escolha depois do aviso ficar legível por um instante.
+          if (this.losePhase !== 1 ||
+              this.loseTimer < LOSE_PROMPT_MS + LOSE_INPUT_GRACE_MS) break;
+
+          if (this._pressed('confirm')) {
             this.soul.hp = this.soul.maxHp;
             this.soul.displayHp = this.soul.maxHp;
             this.boss.currentHp = this.boss.maxHp;
             this.boss.actCount = 0;
             this.boss.spareable = false;
             this.projectiles = [];
-            this.floatingTexts = [];
+            this.damageNumbers = [];
+            this.enemyHpBar.visible = false;
             this.soulEntered = false;
+            this.soulShards = null;
             this.setState(STATE.INTRO);
-          }
-          if (this.losePhase === 1 && this._pressed('cancel')) {
-            this.destroy();
-            this._removeOverlay();
-            this.onLose();
+          } else if (this._pressed('cancel')) {
+            this._finish(this.onLose);
           }
           break;
       }
     }
 
-    _applyFightDamage() {
-      const accuracy = 1 - Math.abs(this.fightBar.pos - 50) / 50;
-      const baseDmg = 6 + Math.floor(accuracy * 14);
-      const dmg = Math.max(1, baseDmg - this.boss.def);
-      this.boss.currentHp = Math.max(0, this.boss.currentHp - dmg);
-      this.boss.shakeTimer = 400;
-      this.floatingTexts.push(
-        new FloatingText(String(dmg), this.bossRect.x + this.bossRect.w / 2 - 10,
-                         this.bossRect.y + this.bossRect.h / 2, '#ff0')
+    // Encerra o combate uma única vez: sem isso um quadro extra podia
+    // disparar onWin/onLose de novo e reabrir o fluxo de compra.
+    _finish(callback) {
+      if (this.finished) return;
+      this.finished = true;
+      this.destroy();
+      this._removeOverlay();
+      callback();
+    }
+
+    _slashFrames() {
+      return SPRITE.fight.slash[this.slashKind] || SPRITE.fight.slash.glove;
+    }
+
+    _updateFightSequence(dt) {
+      const f = this.fightBar;
+      f.timer += dt;
+
+      switch (f.phase) {
+        case 'sweep':
+          if (this._pressed('confirm')) {
+            this._lockFightCursor(false);
+          } else {
+            f.pos += f.speed * (dt / 16.67);
+            if (f.pos >= 100) {
+              f.pos = 100;
+              this._lockFightCursor(true);  // deixou passar = MISS
+            }
+          }
+          break;
+
+        case 'freeze':
+          if (f.timer >= FIGHT_FREEZE_MS) {
+            f.timer = 0;
+            if (f.miss) {
+              f.phase = 'result';
+              this._spawnDamageNumber(null, false);
+            } else {
+              f.phase = 'slash';
+              this.boss.shakeTimer = this._slashFrames().length * SLASH_FRAME_MS + 140;
+            }
+          }
+          break;
+
+        case 'slash':
+          if (f.timer >= this._slashFrames().length * SLASH_FRAME_MS) {
+            f.timer = 0;
+            f.phase = 'result';
+            this._applyFightDamage();
+          }
+          break;
+
+        case 'result':
+          if (f.timer >= FIGHT_RESULT_MS) {
+            if (this.boss.currentHp <= 0) this.setState(STATE.WIN);
+            else this.setState(STATE.ENEMY_TURN);
+          }
+          break;
+      }
+    }
+
+    // Congela o cursor onde ele parou; a precisão é a distância ao centro.
+    _lockFightCursor(miss) {
+      const f = this.fightBar;
+      f.phase = 'freeze';
+      f.timer = 0;
+      f.miss = miss;
+      f.accuracy = miss ? 0 : 1 - Math.abs(f.pos - 50) / 50;
+      f.crit = !miss && f.accuracy > CRIT_ACCURACY;
+    }
+
+    // O número nasce no topo do monstro: os dígitos são brancos com
+    // contorno preto e sumiriam sobre o corpo (branco) dos sprites.
+    _spawnDamageNumber(value, big) {
+      const r = this.bossRect;
+      this.damageNumbers.push(
+        new DamageNumber(value, r.x + r.w / 2, Math.max(38, r.y + r.h * 0.12), big)
       );
-      this.fightBar._resultTimer = 1200;
+    }
+
+    _applyFightDamage() {
+      const f = this.fightBar;
+      const baseDmg = 6 + Math.floor(f.accuracy * 14);
+      let dmg = Math.max(1, baseDmg - this.boss.def);
+      if (f.crit) dmg = Math.round(dmg * CRIT_MULTIPLIER);
+
+      const before = this.boss.currentHp;
+      this.boss.currentHp = Math.max(0, before - dmg);
+      this._spawnDamageNumber(dmg, f.crit);
+      this._showEnemyHpBar(before);
+    }
+
+    // A barra drena a partir do HP anterior (ou de onde a anterior parou).
+    _showEnemyHpBar(previousHp) {
+      const bar = this.enemyHpBar;
+      const max = this.boss.maxHp || 1;
+      bar.from = bar.visible ? bar.display : previousHp / max;
+      bar.to = this.boss.currentHp / max;
+      bar.display = bar.from;
+      bar.timer = 0;
+      bar.visible = true;
+    }
+
+    _updateEnemyHpBar(dt) {
+      const bar = this.enemyHpBar;
+      if (!bar.visible) return;
+      bar.timer += dt;
+      const k = Math.min(1, bar.timer / ENEMY_HP_DRAIN_MS);
+      bar.display = bar.from + (bar.to - bar.from) * (1 - Math.pow(1 - k, 3));
+      if (bar.timer >= ENEMY_HP_HOLD_MS + ENEMY_HP_FADE_MS) bar.visible = false;
     }
 
     _removeOverlay() {
@@ -1411,10 +2003,24 @@
         return;
       }
 
+      if (this.state === STATE.FIGHT_ANIM) this._renderSlash(ctx);
+      this._renderEnemyHpBar(ctx);
+
       this._renderBattleBox(ctx);
 
       if (this.state === STATE.ENEMY_TURN) {
+        // A caixa recorta os projéteis, como no jogo: eles entram e saem
+        // pelas bordas em vez de aparecer sobre o HUD.
+        const b = this.battleBox;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(b.x + BOX_BORDER, b.y + BOX_BORDER,
+                 b.w - BOX_BORDER * 2, b.h - BOX_BORDER * 2);
+        ctx.clip();
         for (const p of this.projectiles) p.render(ctx, this.sprites);
+        ctx.restore();
+        // A alma fica fora do recorte para a animação de entrada, que
+        // começa lá no menu, continuar visível.
         this.soul.render(ctx, this.sprites);
       } else if (this.state === STATE.FIGHT_ANIM) {
         this._renderFightBar(ctx);
@@ -1432,7 +2038,7 @@
 
       this._renderHUD(ctx);
 
-      for (const f of this.floatingTexts) f.render(ctx);
+      for (const d of this.damageNumbers) d.render(ctx, this.sprites);
 
       if (this.state === STATE.WIN) {
         this._renderWin(ctx);
@@ -1541,27 +2147,86 @@
       }
     }
 
+    // spr_target dentro da caixa + cursor (fadebar) varrendo por cima.
     _renderFightBar(ctx) {
+      const f = this.fightBar;
+      if (f.phase !== 'sweep' && f.phase !== 'freeze') return;
+
+      const target = this.sprites[SPRITE.fight.target];
+      if (!target) return;
+
       const b = this.battleBox;
-      const barX = b.x + 14;
-      const barW = b.w - 28;
-      const barH = 16;
-      const barY = b.y + b.h / 2 - barH / 2;
+      const pad = BOX_BORDER + 8;
+      const scale = Math.min(
+        (b.w - pad * 2) / target.width,
+        (b.h - pad * 2) / target.height
+      );
+      const tw = target.width * scale;
+      const th = target.height * scale;
+      const tx = b.x + (b.w - tw) / 2;
+      const ty = b.y + (b.h - th) / 2;
+      ctx.drawImage(target, tx, ty, tw, th);
 
-      ctx.fillStyle = '#333';
-      ctx.fillRect(barX, barY, barW, barH);
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(barX, barY, barW, barH);
+      const barKey = f.phase === 'sweep'
+        ? SPRITE.fight.fadebar.cyan
+        : f.crit ? SPRITE.fight.fadebar.yellow : SPRITE.fight.fadebar.red;
+      const bar = this.sprites[barKey];
 
-      // Center mark
-      ctx.fillStyle = '#0f0';
-      ctx.fillRect(barX + barW / 2 - 2, barY - 6, 4, barH + 12);
+      if (bar) {
+        const bw = bar.width * scale;
+        const bh = bar.height * scale;
+        const bx = tx + (f.pos / 100) * (tw - bw);
+        const by = ty + (th - bh) / 2;
+        // Congelado, o cursor pisca antes de sumir — como no jogo.
+        if (f.phase === 'freeze' && Math.floor(f.timer / 70) % 2 === 1)
+          ctx.globalAlpha = 0.45;
+        ctx.drawImage(bar, bx, by, bw, bh);
+        ctx.globalAlpha = 1;
+      }
 
-      // Moving cursor
-      const cx = barX + (this.fightBar.pos / 100) * barW;
-      ctx.fillStyle = this.fightBar.stopped ? '#ff0' : '#fff';
-      ctx.fillRect(cx - 2, barY - 10, 4, barH + 20);
+      // Crítico: flash branco dentro da caixa.
+      if (f.crit && f.phase === 'freeze' && f.timer < 140) {
+        ctx.globalAlpha = 0.55 * (1 - f.timer / 140);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(b.x + BOX_BORDER, b.y + BOX_BORDER,
+                     b.w - BOX_BORDER * 2, b.h - BOX_BORDER * 2);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Animação de golpe centralizada sobre o monstro.
+    _renderSlash(ctx) {
+      const f = this.fightBar;
+      if (f.phase !== 'slash') return;
+
+      const frames = this._slashFrames();
+      const idx = Math.min(frames.length - 1, Math.floor(f.timer / SLASH_FRAME_MS));
+      const img = this.sprites[frames[idx]];
+      if (!img) return;
+
+      const r = this.bossRect;
+      const s = Math.max(0.9, Math.min(2.2, (r.h * 1.15) / img.height));
+      const w = img.width * s;
+      const h = img.height * s;
+      ctx.drawImage(img, r.x + r.w / 2 - w / 2, r.y + r.h / 2 - h / 2, w, h);
+    }
+
+    _renderEnemyHpBar(ctx) {
+      const bar = this.enemyHpBar;
+      if (!bar.visible) return;
+
+      const r = this.bossRect;
+      const x = Math.round(r.x + r.w / 2 - ENEMY_HP_W / 2);
+      const y = Math.round(Math.min(r.y + r.h + 8, BOX_Y - ENEMY_HP_H - 12));
+
+      ctx.globalAlpha = bar.timer > ENEMY_HP_HOLD_MS
+        ? Math.max(0, 1 - (bar.timer - ENEMY_HP_HOLD_MS) / ENEMY_HP_FADE_MS)
+        : 1;
+      ctx.fillStyle = '#7f0000';
+      ctx.fillRect(x, y, ENEMY_HP_W, ENEMY_HP_H);
+      ctx.fillStyle = '#00ff00';
+      ctx.fillRect(x, y, ENEMY_HP_W * Math.max(0, bar.display), ENEMY_HP_H);
+      ctx.globalAlpha = 1;
     }
 
     _renderDialogue(ctx) {
@@ -1576,50 +2241,50 @@
       const r = this.bossRect;
       const font = '13px "Press Start 2P", monospace';
       const lineHeight = 22;
-      const padX = 16;
-      const padY = 18;
-      const maxTextW = 250;
+      const capHeight = 16;
+      const padX = 14;
+      const padY = 20;
+      const gap = 10;
+
+      // O texto se ajusta ao espaço livre do lado mais folgado, senão o
+      // balão estouraria a tela e cobriria o monstro.
+      const roomRight = CANVAS_W - 8 - (r.x + r.w + gap);
+      const roomLeft = (r.x - gap) - 8;
+      const maxTextW = Math.max(120, Math.min(230,
+        Math.max(roomRight, roomLeft) - padX * 2 - BUBBLE_TAIL_GUTTER));
 
       ctx.font = font;
       // O balão é dimensionado pelo texto completo para não "crescer"
       // enquanto o typewriter digita.
       const fullLines = wrapText(ctx, this.typewriter.text, maxTextW);
       const textW = Math.max(...fullLines.map(l => ctx.measureText(l).width));
-      const w = Math.ceil(textW) + padX * 2;
-      const h = fullLines.length * lineHeight + padY * 2 - (lineHeight - 14);
+      const textH = (fullLines.length - 1) * lineHeight + capHeight;
+      // A largura total inclui a faixa transparente do bico.
+      const w = Math.max(72, Math.ceil(textW) + padX * 2 + BUBBLE_TAIL_GUTTER);
+      const h = Math.max(70, textH + padY * 2);
 
       // Prefere a direita do monstro; cai para a esquerda se não couber.
-      let bx = r.x + r.w + 20;
+      let bx = r.x + r.w + gap;
       let tailRight = false;
       if (bx + w > CANVAS_W - 8) {
-        bx = r.x - 20 - w;
+        bx = r.x - gap - w;
         tailRight = true;
       }
       bx = Math.max(8, Math.min(bx, CANVAS_W - w - 8));
 
-      let by = r.y + r.h * 0.2 - h / 2;
+      // O bico fica a BUBBLE_TAIL_Y do topo do sprite; alinha ele à cabeça.
+      let by = r.y + r.h * 0.25 - BUBBLE_TAIL_Y;
       by = Math.max(10, Math.min(by, BOX_Y - h - 14));
 
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(bx, by, w, h);
-
-      // "Rabinho" apontando para o monstro.
-      const tailY = Math.min(by + 22, by + h - 26);
-      ctx.beginPath();
-      if (tailRight) {
-        ctx.moveTo(bx + w, tailY);
-        ctx.lineTo(bx + w + 14, tailY + 8);
-        ctx.lineTo(bx + w, tailY + 18);
-      } else {
-        ctx.moveTo(bx, tailY);
-        ctx.lineTo(bx - 14, tailY + 8);
-        ctx.lineTo(bx, tailY + 18);
+      const img = this.sprites[tailRight ? SPRITE.ui.bubbleRight : SPRITE.ui.bubbleLeft];
+      if (img) {
+        drawNineSlice(ctx, img, bx, by, w, h,
+                      tailRight ? BUBBLE_INSETS.right : BUBBLE_INSETS.left);
       }
-      ctx.closePath();
-      ctx.fill();
 
+      const textX = tailRight ? bx + padX : bx + BUBBLE_TAIL_GUTTER + padX;
       this.typewriter.render(
-        ctx, bx + padX, by + padY + 4, maxTextW,
+        ctx, textX, by + (h - textH) / 2 + capHeight, maxTextW,
         { color: '#000', font, lineHeight }
       );
     }
@@ -1627,20 +2292,23 @@
     _renderHUD(ctx) {
       ctx.font = '14px "Press Start 2P", monospace';
 
-      // Name
+      // O nome é mais largo que o "CHARA" original, então o resto do HUD
+      // é posicionado a partir da largura medida em vez de offsets fixos.
+      let x = BOX_X;
       ctx.fillStyle = '#ff0';
-      ctx.fillText('CHARA', BOX_X, HUD_Y);
+      ctx.fillText(PLAYER_NAME, x, HUD_Y);
+      x += ctx.measureText(PLAYER_NAME).width + 22;
 
-      // LV
       ctx.fillStyle = '#fff';
-      ctx.fillText('LV 1', BOX_X + 110, HUD_Y);
+      ctx.fillText('LV 1', x, HUD_Y);
+      x += ctx.measureText('LV 1').width + 22;
 
-      // HP label
       ctx.fillStyle = '#fff';
-      ctx.fillText('HP', BOX_X + 200, HUD_Y);
+      ctx.fillText('HP', x, HUD_Y);
+      x += ctx.measureText('HP').width + 12;
 
       // HP bar background (red = lost health)
-      const barX = BOX_X + 240;
+      const barX = x;
       const barW = 120;
       const barH = 16;
       ctx.fillStyle = '#600';
@@ -1673,24 +2341,22 @@
     }
 
     _renderLoseScreen(ctx) {
-      // Heart break animation
       const cx = CANVAS_W / 2;
       const cy = CANVAS_H / 2 - 40;
 
-      if (this.losePhase === 0) {
-        // Heart cracks
-        const progress = Math.min(1, this.loseTimer / 1500);
-        if (progress < 0.5) {
-          const img = this.sprites[SPRITE.soul];
-          ctx.drawImage(img, cx - 24, cy - 24, 48, 48);
-        } else {
-          const img = this.sprites[SPRITE.soulBreak];
-          const spread = (progress - 0.5) * 2 * 30;
-          ctx.drawImage(img, cx - 24 - spread, cy - 24, 24, 48);
-          ctx.save();
-          ctx.scale(-1, 1);
-          ctx.drawImage(img, -(cx + spread + 24), cy - 24, 24, 48);
-          ctx.restore();
+      if (this.soulShards) {
+        const img = this.sprites[SPRITE.soulBreak];
+        if (img) for (const s of this.soulShards) s.render(ctx, img);
+      } else if (this.loseTimer < LOSE_CRACK_MS) {
+        const img = this.sprites[SPRITE.soul];
+        if (img) ctx.drawImage(img, cx - 24, cy - 24, 48, 48);
+      } else {
+        // Rachado e tremendo, no instante antes de se partir.
+        const img = this.sprites[SPRITE.soulBreak];
+        if (img) {
+          const w = 48 * (img.width / img.height);
+          const shake = rand(-1.5, 1.5);
+          ctx.drawImage(img, cx - w / 2 + shake, cy - 24, w, 48);
         }
       }
 

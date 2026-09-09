@@ -368,6 +368,11 @@ let toastTimeout = null;
 let currentProduct = null;
 let detailQty = 1;
 let pendingPurchase = null;
+// Um combate por vez. `battleActive` cobre também os 400ms entre o clique e o
+// início da luta, e `resultClosedAt` evita que um clique duplo no botão da
+// tela de resultado atravesse e dispare outro combate no que está embaixo.
+let battleActive = false;
+let resultClosedAt = 0;
 
 function init() {
     loadCart();
@@ -496,7 +501,6 @@ function renderProducts() {
                 <img src="${productMainImage(product)}"
                      alt="${product.name}"
                      loading="lazy">
-                <span class="product-boss-tag">BOSS: ${product.boss.toUpperCase()}</span>
             </div>
             <div class="product-info">
                 <h3 class="product-name">${product.name}</h3>
@@ -617,7 +621,8 @@ function addDetailToCart() {
 function addToCart(productId, qty) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
-    if (pendingPurchase) return;
+    if (pendingPurchase || battleActive) return;
+    if (Date.now() - resultClosedAt < 400) return;
 
     startProductBattle(product, Math.max(1, qty || 1));
 }
@@ -863,6 +868,7 @@ function toggleCart() {
 
 function startProductBattle(product, qty) {
     pendingPurchase = { id: product.id, qty: qty };
+    battleActive = true;
 
     const btn = document.getElementById(`btn-${product.id}`);
     if (btn) {
@@ -911,6 +917,9 @@ function resumeMusic() {
 
 // Vitória (ou MERCY): o item finalmente entra no carrinho.
 function onBattleWin() {
+    if (!battleActive) return;
+    battleActive = false;
+
     document.getElementById('battle-overlay').classList.remove('active');
     resumeMusic();
 
@@ -925,6 +934,9 @@ function onBattleWin() {
 
 // Derrota: o carrinho inteiro é perdido, não só o item em disputa.
 function onBattleLose() {
+    if (!battleActive) return;
+    battleActive = false;
+
     document.getElementById('battle-overlay').classList.remove('active');
     resumeMusic();
 
@@ -971,9 +983,12 @@ function showBattleResult(success, pending) {
     screen.classList.add('active');
 }
 
+// Retry é intenção explícita, então passa por cima da carência de clique.
 function retryBattle(productId, qty) {
     closeResult();
-    addToCart(productId, qty);
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product || battleActive) return;
+    startProductBattle(product, Math.max(1, qty || 1));
 }
 
 // ========== CHECKOUT ==========
@@ -1009,6 +1024,7 @@ function finishPurchase() {
 
 function closeResult() {
     document.getElementById('result-screen').classList.remove('active');
+    resultClosedAt = Date.now();
 }
 
 // ========== TOAST ==========

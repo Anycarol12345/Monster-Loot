@@ -447,17 +447,6 @@ body {
     box-sizing: border-box;
 }
 
-.product-boss-tag {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--ut-red);
-    color: var(--ut-white);
-    font-size: 7px;
-    padding: 3px 6px;
-    letter-spacing: 1px;
-}
-
 .product-info {
     padding: 16px;
 }
